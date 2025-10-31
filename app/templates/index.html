@@ -1,0 +1,28 @@
+
+{% extends "base.html" %}
+{% block content %}
+  <h1>Ongoing & Upcoming Elections</h1>
+  <div class="grid">
+    {% for e in elections %}
+      <div class="card">
+        <img src="{{ e.image_url or default_image }}" alt="event image" />
+        <div class="pad">
+          <h3>{{ e.title }}</h3>
+          <p class="muted">{{ e.description }}</p>
+          <p>
+            <span class="tag">{{ e.start_date }} → {{ e.end_date }}</span>
+            {% if e.is_open() %}
+              <span class="tag open">Open</span>
+            {% else %}
+              <span class="tag closed">Closed</span>
+            {% endif %}
+          </p>
+          <a class="btn" href="{{ url_for('voting.election_detail', election_id=e.id) }}">View / Vote</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% if not elections %}
+    <p class="muted">No elections yet. Admins can create one.</p>
+  {% endif %}
+{% endblock %}

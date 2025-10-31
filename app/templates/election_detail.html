@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ election.title }}</h1>
+  <img src="{{ election.image_url or default_image }}" alt="event image" class="hero" />
+  <p class="muted">{{ election.description }}</p>
+  <p>
+    <span class="tag">{{ election.start_date }} → {{ election.end_date }}</span>
+    {% if election.is_open() %}
+      <span class="tag open">Open</span>
+    {% else %}
+      <span class="tag closed">Closed</span>
+    {% endif %}
+  </p>
+
+  {% if not election.is_open() %}
+    <p class="muted">Voting is closed.</p>
+    {% if date.today() > election.end_date %}
+      <a class="btn secondary" href="{{ url_for('voting.export_votes', election_id=election.id) }}">Download curated votes (CSV)</a>
+    {% endif %}
+  {% else %}
+    {% if already %}
+      <p class="muted">You have already voted in this election.</p>
+    {% else %}
+      <h2>Cast your vote</h2>
+      <form method="post" action="{{ url_for('voting.cast_vote', election_id=election.id) }}">
+        {% set options = shuffled_options if shuffled_options is defined else election.options() %}
+        {% if options|length == 1 %}
+          <p><strong>{{ options[0] }}</strong></p>
+          <label><input type="radio" name="yesno" value="YES"> Yes</label>
+          <label style="margin-left:16px"><input type="radio" name="yesno" value="NO"> No</label>
+        {% else %}
+          <p class="muted">
+            Rank your choices. Rank 1 is your favorite. You may leave trailing ranks blank,
+            but you cannot skip earlier ranks or repeat options.
+          </p>
+
+          <div id="ranked-root" data-options='{{ options | tojson }}'>
+            {% for i in range(1, (options|length)+1) %}
+              <label>Rank {{ i }}</label>
+              <select name="rank_{{ i }}" class="rank-select" data-rank="{{ i }}">
+                <option value="">— leave blank —</option>
+                {% for opt in options %}
+                  <option value="{{ opt }}">{{ opt }}</option>
+                {% endfor %}
+              </select>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <div style="margin-top:12px"><button class="btn" type="submit">Submit vote</button></div>
+      </form>
+
+      {% if options|length > 1 %}
+        <!-- Ranked-choice behavior -->
+        <script src="{{ url_for('static', filename='js/ranked.js') }}"></script>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+
+  {% if session.get('is_admin') and date.today() > election.end_date %}
+    <div style="margin-top:18px">
+      <a class="btn secondary" href="{{ url_for('voting.export_votes', election_id=election.id) }}">Download curated votes (CSV)</a>
+    </div>
+  {% endif %}
+{% endblock %}

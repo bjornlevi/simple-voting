@@ -1,0 +1,37 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title or 'Elections' }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<nav class="nav">
+  <a href="{{ url_for('main.index') }}" class="btn secondary">Home</a>
+  {% if session.get('kennitala') %}
+    <span class="tag">Kennitala: {{ session.get('kennitala') }}</span>
+    {% if session.get('is_admin') %}
+      <a href="{{ url_for('admin.home') }}" class="btn secondary">Admin</a>
+    {% endif %}
+    <a href="{{ url_for('main.logout') }}" class="btn">Logout</a>
+  {% else %}
+    <a href="{{ url_for('main.login') }}" class="btn">Login</a>
+  {% endif %}
+</nav>
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat,msg in messages %}
+        <div class="flash {{cat}}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</div>
+</body>
+</html>

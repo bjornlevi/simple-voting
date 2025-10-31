@@ -1,0 +1,31 @@
+
+{% extends "base.html" %}
+{% block content %}
+  <h1>Create Election</h1>
+  <form method="post">
+    <label>Title</label>
+    <input name="title" required />
+    <label>Description</label>
+    <textarea name="description" rows="3"></textarea>
+    <label>Image URL (optional)</label>
+    <input name="image_url" placeholder="https://..." />
+    <div class="row">
+      <div class="col">
+        <label>Start date (YYYY-MM-DD)</label>
+        <input name="start_date" placeholder="2025-10-01" required />
+      </div>
+      <div class="col">
+        <label>End date (YYYY-MM-DD)</label>
+        <input name="end_date" placeholder="2025-10-31" required />
+      </div>
+    </div>
+    <label>Options (one per line)</label>
+    <textarea name="options" rows="6" placeholder="Option A
+Option B
+Option C" required></textarea>
+    <div style="margin-top:12px">
+      <button class="btn" type="submit">Create</button>
+      <a class="btn secondary" href="{{ url_for('admin.home') }}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}

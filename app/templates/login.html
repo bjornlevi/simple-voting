@@ -1,0 +1,11 @@
+
+{% extends "base.html" %}
+{% block content %}
+  <h1>Mock Login</h1>
+  <form method="post">
+    <label>Kennitala</label>
+    <input name="kennitala" placeholder="000000-0000" />
+    <div style="margin-top:10px"><button class="btn" type="submit">Login</button></div>
+  </form>
+  <p class="muted">Mock only. Replace with SSO and pull kennitala from the identity token.</p>
+{% endblock %}
