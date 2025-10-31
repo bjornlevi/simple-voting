@@ -3,6 +3,14 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
 from datetime import date
+from sqlalchemy import text
+
+def ensure_schema():
+    insp = db.inspect(db.engine)
+    cols = {c['name'] for c in insp.get_columns('elections')}
+    if 'closed_at' not in cols:
+        db.session.execute(text("ALTER TABLE elections ADD COLUMN closed_at DATETIME"))
+        db.session.commit()
 
 db = SQLAlchemy()
 
@@ -30,5 +38,6 @@ def create_app():
 
         from app import models  # noqa: F401
         db.create_all()
+        ensure_schema()
 
     return app
