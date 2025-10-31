@@ -1,7 +1,13 @@
-
 {% extends "base.html" %}
 {% block content %}
-  <h1>Ongoing & Upcoming Elections</h1>
+  <div class="row" style="align-items:center; margin-bottom:12px">
+    <h1 style="margin:0; flex:1">Admin — Elections</h1>
+    <div class="row" style="gap:8px">
+      <a class="btn" href="{{ url_for('admin.create_election') }}">Create election</a>
+      <a class="btn secondary" href="{{ url_for('admin.home') }}">Manage admins</a>
+    </div>
+  </div>
+
   <div class="grid">
     {% for e in elections %}
       <div class="card">
@@ -15,14 +21,39 @@
               <span class="tag open">Open</span>
             {% else %}
               <span class="tag closed">Closed</span>
+              {% if not e.is_open() %}
+                <!-- show export link when closed -->
+                <a class="btn secondary" style="margin-left:8px"
+                   href="{{ url_for('voting.export_votes', election_id=e.id) }}">Export CSV</a>
+              {% endif %}
             {% endif %}
           </p>
-          <a class="btn" href="{{ url_for('voting.election_detail', election_id=e.id) }}">View / Vote</a>
+
+          <div class="row" style="gap:8px; flex-wrap:wrap; margin-top:8px">
+            <a class="btn" href="{{ url_for('voting.election_detail', election_id=e.id) }}">View</a>
+
+            {% if e.is_open() %}
+              <form method="post" action="{{ url_for('admin.close_election', election_id=e.id) }}"
+                    onsubmit="return confirm('Close this election now?')">
+                <button class="btn danger" type="submit">Close now</button>
+              </form>
+            {% else %}
+              <form method="post" action="{{ url_for('admin.reopen_election', election_id=e.id) }}">
+                <button class="btn secondary" type="submit">Reopen</button>
+              </form>
+            {% endif %}
+
+            <form method="post" action="{{ url_for('admin.delete_election', election_id=e.id) }}"
+                  onsubmit="return confirm('Delete this election and ALL its votes?')">
+              <button class="btn danger" type="submit">Delete</button>
+            </form>
+          </div>
         </div>
       </div>
     {% endfor %}
   </div>
+
   {% if not elections %}
-    <p class="muted">No elections yet. Admins can create one.</p>
+    <p class="muted">No elections yet. Use “Create election”.</p>
   {% endif %}
 {% endblock %}

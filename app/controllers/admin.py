@@ -85,3 +85,29 @@ def delete_election(election_id: int):
     db.session.commit()
     flash("Election deleted", "success")
     return redirect(url_for("admin.home"))
+
+from datetime import datetime  # top
+
+@admin_bp.route("/elections/<int:election_id>/close", methods=["POST"])
+def close_election(election_id: int):
+    require_admin()
+    e = Election.query.get_or_404(election_id)
+    if e.closed_at is None:
+        e.closed_at = datetime.utcnow()
+        db.session.commit()
+        flash("Election closed now.", "success")
+    else:
+        flash("Election is already closed.", "error")
+    return redirect(url_for("admin.home"))
+
+@admin_bp.route("/elections/<int:election_id>/reopen", methods=["POST"])
+def reopen_election(election_id: int):
+    require_admin()
+    e = Election.query.get_or_404(election_id)
+    if e.closed_at is not None:
+        e.closed_at = None
+        db.session.commit()
+        flash("Election reopened.", "success")
+    else:
+        flash("Election is not closed.", "error")
+    return redirect(url_for("admin.home"))

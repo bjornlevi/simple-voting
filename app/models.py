@@ -18,13 +18,15 @@ class Election(db.Model):
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
     salt = db.Column(db.String(64), nullable=False)
+    closed_at = db.Column(db.DateTime, nullable=True)  # NEW
 
     def options(self):
         return json.loads(self.options_json)
 
     def is_open(self) -> bool:
         today = date.today()
-        return self.start_date <= today <= self.end_date
+        # Closed if manually closed, otherwise date-gated
+        return self.closed_at is None and (self.start_date <= today <= self.end_date)
 
 class Vote(db.Model):
     __tablename__ = 'votes'

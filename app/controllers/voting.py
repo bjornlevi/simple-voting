@@ -102,6 +102,9 @@ def cast_vote(election_id: int):
 @voting_bp.route("/<int:election_id>/export")
 def export_votes(election_id: int):
     election = Election.query.get_or_404(election_id)
+    # Block export only if still open
+    if election.is_open():
+        abort(403, description="Election not finished yet.")    
     if date.today() <= election.end_date:
         abort(403, description="Election not finished yet.")
 

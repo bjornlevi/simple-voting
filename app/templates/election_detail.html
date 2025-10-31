@@ -56,9 +56,10 @@
     {% endif %}
   {% endif %}
 
-  {% if session.get('is_admin') and date.today() > election.end_date %}
+  {% if session.get('is_admin') and not election.is_open() %}
     <div style="margin-top:18px">
       <a class="btn secondary" href="{{ url_for('voting.export_votes', election_id=election.id) }}">Download curated votes (CSV)</a>
     </div>
   {% endif %}
+
 {% endblock %}
