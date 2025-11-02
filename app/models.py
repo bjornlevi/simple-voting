@@ -1,7 +1,14 @@
 
-from datetime import date
+from datetime import datetime, UTC, timedelta
 import json
 from app import db
+
+def _to_aware_utc(dt):
+    if dt is None:
+        return None
+    # If SQLite returned naive, assume it's UTC
+    return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
+
 
 class AdminUser(db.Model):
     __tablename__ = 'admin_users'
@@ -14,20 +21,39 @@ class Election(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, default='')
     image_url = db.Column(db.String(500), nullable=True)
-    options_json = db.Column(db.Text, nullable=False)  # JSON list of option labels
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
+    options_json = db.Column(db.Text, nullable=False)
+
+    # keep timezone=True for future engines; SQLite still strips it
+    start_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    end_at   = db.Column(db.DateTime(timezone=True), nullable=False)
+
     salt = db.Column(db.String(64), nullable=False)
-    closed_at = db.Column(db.DateTime, nullable=True)  # NEW
+    closed_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     def options(self):
         return json.loads(self.options_json)
 
-    def is_open(self) -> bool:
-        today = date.today()
-        # Closed if manually closed, otherwise date-gated
-        return self.closed_at is None and (self.start_date <= today <= self.end_date)
+    def _aware(self, dt):
+        if dt is None: return None
+        return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
 
+    def is_open(self) -> bool:
+        now = datetime.now(UTC).replace(second=0, microsecond=0)
+        start = self._aware(self.start_at)
+        end   = self._aware(self.end_at)
+        closed = self._aware(self.closed_at) if self.closed_at else None
+        return (closed is None) and (start <= now <= end)
+
+    def is_upcoming(self) -> bool:
+        now = datetime.now(UTC).replace(second=0, microsecond=0)
+        start = self._aware(self.start_at)
+        return start > now
+
+    def is_recently_finished(self, days: int = 7) -> bool:
+        now = datetime.now(UTC).replace(second=0, microsecond=0)
+        end = self._aware(self.end_at)
+        return end < now and end >= (now - timedelta(days=days))
+    
 class Vote(db.Model):
     __tablename__ = 'votes'
     id = db.Column(db.Integer, primary_key=True)

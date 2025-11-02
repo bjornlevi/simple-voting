@@ -1,4 +1,4 @@
-
+from datetime import datetime, UTC, timedelta
 from flask import Blueprint, render_template, current_app, redirect, url_for, request, flash
 from app.models import Election, AdminUser
 from app.services import auth
@@ -8,8 +8,20 @@ main_bp = Blueprint("main", __name__)
 
 @main_bp.route("/")
 def index():
-    elections = Election.query.order_by(Election.start_date.desc()).all()
-    return render_template("index.html", elections=elections, default_image=current_app.config["DEFAULT_IMAGE"])
+    now = datetime.now(UTC).replace(second=0, microsecond=0)
+    grace = timedelta(days=14)
+
+    # Show: all open or upcoming elections, plus those that ended within last 14 days
+    elections = (Election.query
+        .filter(Election.end_at >= (now - grace))
+        .order_by(Election.start_at.desc())
+        .all()
+    )
+    return render_template(
+        "index.html",
+        elections=elections,
+        default_image=current_app.config["DEFAULT_IMAGE"],
+    )
 
 @main_bp.route("/login", methods=["GET", "POST"])
 def login():

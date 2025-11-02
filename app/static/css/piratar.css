@@ -1,0 +1,455 @@
+/* =====================================================================
+   PÍRATAR UI — Design Standard Implementation
+   Structure:
+     01. Fonts
+     02. Design Tokens (CSS variables)
+     03. Base / Resets
+     04. Layout (container, row/col, section)
+     05. Navigation / Header
+     06. Typography helpers
+     07. Components: Buttons & Tags
+     08. Components: Cards
+     09. Forms (grids, inputs, helpers)
+     10. Feedback (flash messages)
+     11. Footer
+     12. Accessibility / Focus
+   ===================================================================== */
+
+
+/* =============== 01. FONTS ========================================== */
+@font-face {
+  font-family: "Public Sans";
+  src: url("../design/public-sans-v1.008/binaries/otf/PublicSans-Regular.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Public Sans";
+  src: url("../design/public-sans-v1.008/binaries/otf/PublicSans-Light.otf") format("opentype");
+  font-weight: 300; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Public Sans";
+  src: url("../design/public-sans-v1.008/binaries/otf/PublicSans-SemiBold.otf") format("opentype");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Public Sans";
+  src: url("../design/public-sans-v1.008/binaries/otf/PublicSans-Bold.otf") format("opentype");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Public Sans";
+  src: url("../design/public-sans-v1.008/binaries/otf/PublicSans-Black.otf") format("opentype");
+  font-weight: 900; font-style: normal; font-display: swap;
+}
+
+
+/* =============== 02. DESIGN TOKENS ================================== */
+:root{
+  /* Brand (align with piratar.is) */
+  --brand-purple: #250A3B;         /* header background */
+  --primary-action: #7B68EE;       /* CTA purple */
+  --accent-yellow: #FFE500;        /* loud CTA like “Vertu memm” */
+
+  /* App palette */
+  --color-primary: var(--primary-action);
+  --color-black:   #000000;
+  --color-white:   #FFFFFF;
+  --color-gray-1:  #F4F5F7;
+  --color-gray-2:  #E6E7EB;
+  --color-gray-7:  #4B4E57;
+
+  /* Optional accents (keep) */
+  --acc-sky:   #86c9ef;
+  --acc-orange:#ff5e00;
+  --acc-mint:  #a1ecdc;
+  --acc-pink:  #ff3cb1;
+  --acc-yellow:#ffe500;
+  --acc-blue:  #005c9f;
+  --acc-red:   #b2071d;
+  --acc-violet:#4a3584;
+
+  /* Radii & shadows */
+  --radius-xl: 1px;  /* big surfaces (cards/panel) */
+  --radius-md: 1px;   /* controls (buttons, inputs) */
+  --radius-sm: 1px;   /* small bits (chips/tags) */
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-2: 0 2px 4px rgba(0,0,0,0.08);
+
+  /* Type rhythm */
+  --lh-100: 1.0;
+  --lh-120: 1.2;
+  --lh-150: 1.5;
+  --lh-200: 2.0;
+  --ls-02: 0.02em;
+  --ls-05: 0.05em;
+  --ls-10: 0.10em;
+}
+
+/* =============== 03. BASE / RESETS ================================== */
+html, body { height: 100%; }
+* { box-sizing: border-box; }
+body{
+  font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  line-height: var(--lh-150);
+  color: var(--color-black);
+  background: var(--color-gray-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+img{ max-width:100%; display:block; }
+
+
+/* =============== 04. LAYOUT ========================================= */
+/* Centered content wrapper */
+.container{ max-width:1100px; margin:0 auto; padding:0 20px; }
+
+/* Full-bleed bands (color sections spanning the viewport) */
+.band{
+  width:100%;
+  /* vertical rhythm similar to piratar.is */
+  padding: clamp(28px, 6vw, 72px) 0;
+}
+
+/* Band variants */
+.band--brand{    background: var(--brand-purple);   color: #fff; }
+.band--lavender{ background: #8E6BF0;               color: #fff; } /* light purple stripe */
+.band--gray{     background: var(--color-gray-1);   color: var(--color-black); }
+
+/* “Panel” band – white card on gray background, like your screenshots */
+.band--panel{
+  background: var(--color-gray-1);
+}
+.band--panel > .container{
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-1);
+  padding: clamp(18px, 3vw, 28px);
+}
+
+/* Simple flex utilities used in templates */
+.row{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.col{ flex:1 1 0; min-width:0; }
+
+/* Legacy .section keeps working (maps to a neutral band) */
+.section{ padding: clamp(20px, 5vw, 56px) 0; }
+
+/* Full-bleed yellow band (like the reference sections) */
+.band--yellow { background: var(--accent-yellow); color: #000; }
+
+/* Dark brand card to place on yellow */
+.brand-card{
+  background: var(--brand-purple);
+  color: #fff;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-1);
+  padding: clamp(18px, 3vw, 28px);
+}
+
+
+/* =============== 05. NAVIGATION / HEADER ============================ */
+.header{
+  background: var(--brand-purple);
+  border-bottom: 0;
+}
+.nav{
+  display:flex; align-items:center; gap:24px; padding:14px 0;
+  text-transform: uppercase; letter-spacing: var(--ls-05); font-weight: 700;
+}
+.brand{
+  display:flex; align-items:center; gap:12px; margin-right:auto;
+  text-decoration:none; color:#fff;
+}
+.brand:hover{ color: var(--accent-yellow); }
+.brand-mark{ width:34px; height:34px; }
+.brand-text{ font-weight:900; letter-spacing: var(--ls-05); color:#fff; }
+.nav-right{ display:flex; align-items:center; gap:12px; }
+.nav-link{ color:#fff; text-decoration:none; }
+.nav-link:hover{ color: var(--accent-yellow); }
+
+/* Buttons keep pill style; secondary stays light on dark header */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:112px; height:42px; padding:0 16px;
+  border-radius:999px; border:1px solid transparent;
+  background:var(--color-primary); color:var(--color-white);
+  font-weight:700; cursor:pointer; text-decoration:none;
+  transition: transform .03s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+  flex:0 0 auto;
+}
+.btn:hover{ transform:translateY(-1px); box-shadow:var(--shadow-2); }
+.btn.secondary{ background:#fff; color:#000; border:2px solid var(--color-gray-2); }
+.btn.secondary:hover{ border-color: var(--color-primary); }
+/* Optional loud CTA (yellow) */
+.btn.attention{ background: var(--accent-yellow); color:#000; border:2px solid #000; }
+
+/* =============== 06. TYPOGRAPHY HELPERS ============================= */
+h1,h2,h3{ margin:0 0 .5rem; line-height: var(--lh-120); letter-spacing: var(--ls-02); }
+h1{ font-weight:900; font-size: clamp(1.75rem, 2.2vw + 1rem, 2.5rem); }
+h2{ font-weight:700; font-size: clamp(1.375rem, 1.4vw + .9rem, 1.75rem); }
+h3{ font-weight:600; font-size: 1.125rem; }
+.muted { color: var(--color-gray-7); }
+/* markdown container (used for description|md) */
+.md *:first-child{ margin-top:0; } .md *:last-child{ margin-bottom:0; }
+.md p{ margin:0 0 .75rem; }
+.md ul,.md ol{ margin:.5rem 0 .75rem 1.25rem; }
+.md code{ background:var(--color-gray-2); padding:.1rem .35rem; border-radius:6px; font-size:.9em; }
+.md pre{ background:var(--color-gray-2); padding:12px; border-radius:10px; overflow:auto; }
+
+
+/* =============== 07. COMPONENTS — BUTTONS & TAGS ==================== */
+/* Base */
+.btn{
+  --btn-bg: var(--color-primary);
+  --btn-fg: #fff;
+  --btn-bd: transparent;
+
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:112px; height:42px; padding:0 16px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--btn-bd);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-weight:700; cursor:pointer; text-decoration:none;
+  transition: transform .03s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+  flex:0 0 auto;
+}
+.btn:hover{ transform: translateY(-1px); box-shadow: var(--shadow-2); }
+.btn:active{ transform: translateY(0); box-shadow: var(--shadow-1); }
+
+/* Variants */
+.btn.primary{ /* default if you just use .btn */ }
+
+.btn.secondary{
+  --btn-bg: #fff;
+  --btn-fg: #000;
+  --btn-bd: var(--color-gray-2);
+}
+
+.btn.outline{
+  --btn-bg: transparent;
+  --btn-fg: #000;
+  --btn-bd: var(--color-gray-2);
+}
+
+.btn.muted{                  /* good for “Reopen” */
+  --btn-bg: var(--color-gray-1);
+  --btn-fg: #000;
+  --btn-bd: var(--color-gray-2);
+}
+
+.btn.danger{
+  --btn-bg: var(--acc-red);
+  --btn-fg: #fff;
+  --btn-bd: transparent;
+}
+
+.btn.attention{              /* loud CTA (yellow) */
+  --btn-bg: var(--accent-yellow);
+  --btn-fg: #000;
+  --btn-bd: #000;
+}
+
+/* On colored bands (lavender/header) — use ghost-light for “Manage admins” etc. */
+.btn.ghost-light{
+  --btn-bg: transparent;
+  --btn-fg: #fff;
+  --btn-bd: rgba(255,255,255,.65);
+}
+.band--lavender .btn.ghost-light:hover,
+.header .btn.ghost-light:hover { --btn-bd:#fff; }
+
+/* Small chips/tags */
+.tag{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:4px 10px;
+  border-radius: var(--radius-sm);
+  background:var(--color-gray-2); color:var(--color-black);
+  font-size:.875rem; line-height:1.2;
+}
+.tag.open{ background: var(--color-primary); color:#fff; }
+.tag.closed{ background:#000; color:#fff; }
+
+
+/* =============== 08. COMPONENTS — CARDS ============================= */
+
+/* Legacy simple card (kept for compatibility) */
+.card{
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.card img{
+  width:100%; height:200px; object-fit:cover; background:var(--color-gray-2);
+}
+.card .pad{ padding:18px; }
+.card .actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; align-items:center; }
+
+/* --- Unified media card (image left, content right) --- */
+/* Use:
+   .media-card.media-card--list    (compact index)
+   .media-card.media-card--detail  (roomier detail)
+   Elements: .media-card__media, .media-card__content
+   Back-compat aliases: .election-card, .election-media, .election-content, .election-title
+*/
+.media-card,
+.election-card{                      /* alias */
+  --media-w: 160px;                  /* default image column width */
+  --media-h: 160px;                  /* default max image height */
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: var(--media-w) 1fr;
+}
+
+.media-card--list{   --media-w:160px; --media-h:160px; }
+.media-card--detail,
+.election-card{      --media-w:340px; --media-h:280px; }
+
+.media-card__media,
+.election-media{     /* alias */
+  background: var(--color-gray-2);
+  display:flex; align-items:center; justify-content:center;
+}
+.media-card__media img,
+.election-media img{ /* alias */
+  width:100%; height:100%; max-height:var(--media-h); object-fit:cover; display:block;
+}
+
+.media-card__content,
+.election-content{   /* alias */
+  padding:18px;
+}
+
+.media-card__title,
+.election-title{     /* alias */
+  margin:0 0 6px; font-size:clamp(1.2rem, 1.1vw + 1rem, 1.7rem); font-weight:700;
+}
+
+.media-card__desc{ margin-bottom:8px; }
+
+.election-meta{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:6px 0 10px; }
+.media-card .actions{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+
+/* Responsive: stack on narrow screens */
+@media (max-width:800px){
+  .media-card,
+  .election-card{ grid-template-columns:1fr; }
+  .media-card__media img,
+  .election-media img{ max-height:220px; }
+}
+
+/* =============== 09. FORMS ========================================== */
+.form-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 28px; /* more breathing room between columns */
+}
+@media (max-width: 720px){
+  .form-grid{ grid-template-columns: 1fr; }
+}
+.form-field{ display:flex; flex-direction:column; gap:6px; }
+.form-field label{ font-weight:600; }
+
+.input, .textarea{
+  width:100%;
+  padding:10px 12px;
+  border:1.5px solid var(--color-gray-2);
+  border-radius: var(--radius-md);  
+  background:var(--color-white);
+  line-height:1.3;
+}
+.form--brand .input,
+.form--brand .textarea{
+  background:#7B68EE; color:#fff; border:none;
+  border-radius: var(--radius-md);   /* keep same radius in brand theme */
+}
+
+.input:focus, .textarea:focus{
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+/* keep buttons from filling grid tracks */
+.form-grid .btn,
+.form-grid a.btn,
+.form-grid button.btn{ width:auto; justify-self:start; }
+
+/* inline forms (delete/close buttons etc.) */
+.form-inline{ display:inline; }
+
+/* Helper text */
+.help{ font-size:.875rem; color:var(--color-gray-7); }
+
+/* Brand themed form on dark card */
+.form--brand .form-field label{ color: var(--accent-yellow); font-weight: 600; }
+
+.form--brand .input,
+.form--brand .textarea{
+  background: #7B68EE;          /* purple fill */
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  height: 46px;                  /* inputs look chunkier on that card */
+  padding: 10px 12px;
+}
+.form--brand .textarea{ height: auto; min-height: 120px; }
+
+.form--brand .input::placeholder,
+.form--brand .textarea::placeholder{ color: rgba(255,255,255,0.75); }
+
+.form--brand .input:focus,
+.form--brand .textarea:focus{
+  outline: 3px solid var(--accent-yellow);
+  outline-offset: 2px;
+}
+
+/* Radios/checkboxes pick up yellow accent on dark */
+.form--brand input[type="checkbox"],
+.form--brand input[type="radio"]{
+  accent-color: var(--accent-yellow);
+}
+
+/* Helper text in yellow tone */
+.form--brand .help{ color: var(--accent-yellow); opacity: .9; }
+
+
+/* =============== 10. FEEDBACK — FLASH MESSAGES ====================== */
+.flash-wrap{ display:grid; gap:8px; margin-bottom:16px; }
+.flash{ padding:10px 12px; border-radius:12px; font-weight:600; }
+.flash.success{ background:#e8f7ee; color:#0b6b2e; }
+.flash.error{ background:#fdecea; color:#b00020; }
+.flash.warning{ background:#fff7e6; color:#8a5b00; }
+.flash.info{ background:#e8f1ff; color:#0b3d91; }
+
+
+/* =============== 11. FOOTER ========================================= */
+.site-footer{
+  background: var(--brand-purple);
+  color: #fff;
+  padding: clamp(24px, 4vw, 40px) 0;
+  margin-top: 0; /* let bands manage spacing */
+}
+.site-footer a{ color:#fff; text-decoration:none; }
+.site-footer a:hover{ text-decoration:underline; }
+
+
+/* =============== 12. ACCESSIBILITY / FOCUS ========================== */
+:focus-visible{
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* One-card-per-row list layout */
+.grid--list{
+  display:grid;
+  gap:16px;
+  grid-template-columns:1fr;
+}

@@ -1,31 +1,73 @@
-
 {% extends "base.html" %}
-{% block content %}
-  <h1>Create Election</h1>
-  <form method="post">
-    <label>Title</label>
-    <input name="title" required />
-    <label>Description</label>
-    <textarea name="description" rows="3"></textarea>
-    <label>Image URL (optional)</label>
-    <input name="image_url" placeholder="https://..." />
-    <div class="row">
-      <div class="col">
-        <label>Start date (YYYY-MM-DD)</label>
-        <input name="start_date" placeholder="2025-10-01" required />
-      </div>
-      <div class="col">
-        <label>End date (YYYY-MM-DD)</label>
-        <input name="end_date" placeholder="2025-10-31" required />
-      </div>
+
+{% block bands %}
+<section class="band band--yellow">
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for cat,msg in messages %}
+            <div class="flash {{cat}}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="brand-card">
+      <h1 style="margin-top:0">Búa til kosningu</h1>
+
+      <form method="post" id="election-form" class="form-grid form--brand" novalidate>
+        <div class="form-field">
+          <label for="title">Nafn kosninga</label>
+          <input id="title" name="title" class="input" required placeholder="Nafn kosninga - skilyrði">
+        </div>
+
+        <div class="form-field">
+          <label for="image_url">Image URL (optional)</label>
+          <input id="image_url" name="image_url" class="input" placeholder="https://…">
+        </div>
+
+        <div class="form-field" style="grid-column: 1 / -1;">
+          <label for="description">Lýsing</label>
+          <textarea id="description" name="description" class="textarea" rows="4"
+                    aria-describedby="desc-hint"
+                    placeholder="Stutt lýsing (styður markdown)"></textarea>
+          <div id="desc-hint" class="help">Styður markdown (bold, lists, links, code).</div>
+        </div>
+
+        <div class="form-field">
+          <label for="start_at">Kosning hefst</label>
+          <input id="start_at" name="start_at" type="text" class="input" required
+                 aria-describedby="tz-hint" placeholder="2025-11-02 22:00">
+        </div>
+
+        <div class="form-field">
+          <label for="end_at">Kosningu lýkur</label>
+          <input id="end_at" name="end_at" type="text" class="input" required
+                 aria-describedby="tz-hint" placeholder="2025-11-03 22:00">
+        </div>
+
+        <div class="form-field" style="grid-column: 1 / -1;">
+          <label for="options">Valmöguleikar (einn per línu)</label>
+          <textarea id="options" name="options" class="textarea" rows="6"
+                    placeholder="Valmöguleiki A&#10;Valmöguleiki B&#10;Valmöguleiki C" required></textarea>
+        </div>
+
+        <div id="tz-hint" class="help" style="grid-column: 1 / -1;">
+          Tímabelti: Atlantic/Reykjavík. Vistað sem UTC.
+        </div>
+
+        <div class="button-row" style="grid-column: 1 / -1; margin-top:6px;">
+          <button class="btn attention" type="submit">Create</button>
+          <a class="btn secondary" href="{{ url_for('admin.home') }}">Cancel</a>
+        </div>
+      </form>
     </div>
-    <label>Options (one per line)</label>
-    <textarea name="options" rows="6" placeholder="Option A
-Option B
-Option C" required></textarea>
-    <div style="margin-top:12px">
-      <button class="btn" type="submit">Create</button>
-      <a class="btn secondary" href="{{ url_for('admin.home') }}">Cancel</a>
-    </div>
-  </form>
+  </div>
+</section>
+
+<!-- 24h picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+<script src="{{ url_for('static', filename='js/election_form.js') }}" defer></script>
 {% endblock %}

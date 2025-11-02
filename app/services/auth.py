@@ -2,6 +2,8 @@
 # Mock authentication service.
 # In production, replace with real SSO and pull kennitala from the identity token/claims.
 from flask import session
+from functools import wraps
+from flask import g, abort
 
 def set_authenticated(kennitala: str, is_admin: bool):
     session['kennitala'] = kennitala
@@ -13,5 +15,10 @@ def logout():
 def current_kennitala() -> str | None:
     return session.get('kennitala')
 
-def is_admin() -> bool:
-    return bool(session.get('is_admin'))
+def admin_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not getattr(g, "is_admin", False):
+            return abort(403)
+        return view(*args, **kwargs)
+    return wrapped

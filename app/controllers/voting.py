@@ -1,19 +1,39 @@
-
-from datetime import datetime, date
-import json
-import csv
+# app/controllers/voting.py
+from datetime import datetime, date, UTC
+import json, csv, random
+from pathlib import Path
+from sqlalchemy.engine import make_url
 from flask import (
     Blueprint, render_template, redirect, url_for, request,
-    flash, abort, send_file, current_app, session   # ← add session
+    flash, abort, send_file, current_app, session
 )
 from app.models import Election, Vote, VotingRegistry
 from app.services.auth import current_kennitala
 from app.services.hashing import canonicalize_vote, compute_vote_hash
 from app import db
-import random
-
 
 voting_bp = Blueprint("voting", __name__)
+
+def _export_dir() -> Path:
+    """Return <directory containing the DB>/election_exports (create if missing)."""
+    uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
+    url = make_url(uri)
+
+    # Default base: instance path (works for non-SQLite or unknowns)
+    base_dir = Path(current_app.instance_path)
+
+    # If SQLite file, use its actual on-disk directory
+    if url.drivername.startswith("sqlite") and url.database:
+        db_path = Path(url.database)
+        if not db_path.is_absolute():
+            # Try resolving relative to instance_path first; fallback to CWD
+            candidate = (Path(current_app.instance_path) / db_path)
+            db_path = candidate.resolve() if candidate.parent.exists() else db_path.resolve()
+        base_dir = db_path.parent
+
+    out = base_dir / "election_exports"
+    out.mkdir(parents=True, exist_ok=True)
+    return out
 
 @voting_bp.route("/<int:election_id>")
 def election_detail(election_id: int):
@@ -35,7 +55,7 @@ def election_detail(election_id: int):
         election=election,
         already=bool(already),
         default_image=current_app.config["DEFAULT_IMAGE"],
-        shuffled_options=shuffled,  # NEW
+        shuffled_options=shuffled,
     )
 
 @voting_bp.route("/<int:election_id>/vote", methods=["POST"])
@@ -44,6 +64,11 @@ def cast_vote(election_id: int):
     kt = current_kennitala()
     if not kt:
         return redirect(url_for("main.login", next=url_for("voting.election_detail", election_id=election.id)))
+
+    # NEW: only allow voting while the election is open
+    if not election.is_open():
+        flash("This election is not accepting votes at this time.", "error")
+        return redirect(url_for("voting.election_detail", election_id=election.id))
 
     existing = VotingRegistry.query.filter_by(election_id=election.id, kennitala=kt).first()
     if existing:
@@ -62,7 +87,6 @@ def cast_vote(election_id: int):
         seen = set()
         ranking = []
 
-        # require rank_1 chosen
         first = request.form.get("rank_1")
         if not first or first not in options:
             flash("Rank 1 must be selected.", "error")
@@ -74,7 +98,6 @@ def cast_vote(election_id: int):
             if not val:
                 encountered_blank = True
                 continue
-            # if we already saw a blank, any later non-blank is illegal (no gaps)
             if encountered_blank:
                 flash("No gaps allowed: fill earlier ranks before later ones.", "error")
                 return redirect(url_for("voting.election_detail", election_id=election.id))
@@ -90,34 +113,47 @@ def cast_vote(election_id: int):
     prev = db.session.query(Vote.vote_hash).filter_by(election_id=election.id).order_by(Vote.id.desc()).limit(1).scalar()
     vote_hash = compute_vote_hash(election.salt, canonical, prev)
 
-    v = Vote(election_id=election.id, vote_json=canonical, vote_date=date.today(), prev_hash=prev, vote_hash=vote_hash)
+    # Keep vote_date as a date (legacy), but timestamps should be aware UTC
+    v = Vote(
+        election_id=election.id,
+        vote_json=canonical,
+        vote_date=date.today(),
+        prev_hash=prev,
+        vote_hash=vote_hash,
+    )
     db.session.add(v)
-    reg = VotingRegistry(election_id=election.id, kennitala=kt, timestamp=datetime.utcnow())
-    db.session.add(reg)
-    db.session.commit()
 
+    reg = VotingRegistry(
+        election_id=election.id,
+        kennitala=kt,
+        timestamp=datetime.now(UTC).replace(second=0, microsecond=0),  # UPDATED
+    )
+    db.session.add(reg)
+
+    db.session.commit()
     flash("Vote submitted. Thank you!", "success")
     return redirect(url_for("voting.election_detail", election_id=election.id))
 
 @voting_bp.route("/<int:election_id>/export")
 def export_votes(election_id: int):
     election = Election.query.get_or_404(election_id)
-    # Block export only if still open
     if election.is_open():
-        abort(403, description="Election not finished yet.")    
-    if date.today() <= election.end_date:
         abort(403, description="Election not finished yet.")
 
     votes = Vote.query.filter_by(election_id=election.id).order_by(Vote.id.asc()).all()
     options = election.options()
-    tmp_path = f"/mnt/data/election_{election.id}_votes.csv"
-    with open(tmp_path, "w", newline="", encoding="utf-8") as f:
+
+    out_dir = _export_dir()
+    out_path = out_dir / f"election_{election.id}_votes.csv"
+
+    with open(out_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         if len(options) == 1:
             writer.writerow(["election_id", "vote_date", "type", "question", "vote", "prev_hash", "vote_hash"])
             for v in votes:
                 payload = json.loads(v.vote_json)
-                writer.writerow([election.id, v.vote_date.isoformat(), payload["type"], payload.get("option",""), payload["vote"], v.prev_hash or "", v.vote_hash])
+                writer.writerow([election.id, v.vote_date.isoformat(), payload["type"],
+                                 payload.get("option",""), payload["vote"], v.prev_hash or "", v.vote_hash])
         else:
             header = ["election_id", "vote_date", "type"] + [f"rank_{i+1}" for i in range(len(options))] + ["prev_hash","vote_hash"]
             writer.writerow(header)
@@ -126,4 +162,5 @@ def export_votes(election_id: int):
                 ranking = payload.get("ranking", [])
                 row = [election.id, v.vote_date.isoformat(), payload["type"]] + ranking + [""] * (len(options)-len(ranking)) + [v.prev_hash or "", v.vote_hash]
                 writer.writerow(row)
-    return send_file(tmp_path, as_attachment=True, download_name=f"election_{election.id}_votes.csv")
+
+    return send_file(out_path, as_attachment=True, download_name=out_path.name)

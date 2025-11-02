@@ -1,65 +1,91 @@
 {% extends "base.html" %}
+{% from "partials/_election_card.html" import election_card %}
 {% block content %}
-  <h1>{{ election.title }}</h1>
-  <img src="{{ election.image_url or default_image }}" alt="event image" class="hero" />
-  <p class="muted">{{ election.description }}</p>
-  <p>
-    <span class="tag">{{ election.start_date }} → {{ election.end_date }}</span>
-    {% if election.is_open() %}
-      <span class="tag open">Open</span>
-    {% else %}
-      <span class="tag closed">Closed</span>
-    {% endif %}
-  </p>
 
-  {% if not election.is_open() %}
-    <p class="muted">Voting is closed.</p>
-    {% if date.today() > election.end_date %}
-      <a class="btn secondary" href="{{ url_for('voting.export_votes', election_id=election.id) }}">Download curated votes (CSV)</a>
-    {% endif %}
-  {% else %}
-    {% if already %}
-      <p class="muted">You have already voted in this election.</p>
-    {% else %}
-      <h2>Cast your vote</h2>
-      <form method="post" action="{{ url_for('voting.cast_vote', election_id=election.id) }}">
-        {% set options = shuffled_options if shuffled_options is defined else election.options() %}
-        {% if options|length == 1 %}
-          <p><strong>{{ options[0] }}</strong></p>
-          <label><input type="radio" name="yesno" value="YES"> Yes</label>
-          <label style="margin-left:16px"><input type="radio" name="yesno" value="NO"> No</label>
-        {% else %}
-          <p class="muted">
-            Rank your choices. Rank 1 is your favorite. You may leave trailing ranks blank,
-            but you cannot skip earlier ranks or repeat options.
-          </p>
+  {% call election_card(election, is_admin, default_image, variant='detail') %}
 
-          <div id="ranked-root" data-options='{{ options | tojson }}'>
-            {% for i in range(1, (options|length)+1) %}
-              <label>Rank {{ i }}</label>
-              <select name="rank_{{ i }}" class="rank-select" data-rank="{{ i }}">
-                <option value="">— leave blank —</option>
-                {% for opt in options %}
-                  <option value="{{ opt }}">{{ opt }}</option>
-                {% endfor %}
-              </select>
-            {% endfor %}
-          </div>
+    <h1 class="election-title">{{ election.title }}</h1>
+
+    <div class="muted md">{{ election.description|md }}</div>
+
+    <div class="election-meta">
+      <span class="tag">
+        {{ utc_to_local_human(election.start_at) }} → {{ utc_to_local_human(election.end_at) }}
+      </span>
+
+      {% if election.is_open() %}
+        <span class="tag open">Kosningu lýkur: {{ utc_to_local_human(election.end_at) }}</span>
+      {% elif election.is_upcoming() %}
+        <span class="tag">Kosning hefst: {{ utc_to_local_human(election.start_at) }}</span>
+      {% else %}
+        <span class="tag closed">Kosningu lokið</span>
+        {% if is_admin %}
+          <a class="btn secondary" href="{{ url_for('voting.export_votes', election_id=election.id) }}">Export CSV</a>
         {% endif %}
-        <div style="margin-top:12px"><button class="btn" type="submit">Submit vote</button></div>
-      </form>
+      {% endif %}
+    </div>
 
-      {% if options|length > 1 %}
-        <!-- Ranked-choice behavior -->
-        <script src="{{ url_for('static', filename='js/ranked.js') }}"></script>
+    {% if election.is_open() %}
+      {% set options = (shuffled_options if shuffled_options is defined else election.options()) %}
+
+      {% if already %}
+        <p class="muted">Þú hefur þegar greitt atkvæði í þessari kosningu.</p>
+      {% else %}
+        <h2>Greiddu atkvæði</h2>
+
+        <form method="post" action="{{ url_for('voting.cast_vote', election_id=election.id) }}" class="form-grid">
+          {% if options|length == 1 %}
+            <div class="form-field" style="grid-column: 1 / -1;">
+              <label for="yesno">Spurning</label>
+              <p><strong>{{ options[0] }}</strong></p>
+              <div class="button-row" role="group" aria-label="Já / Nei">
+                <label><input type="radio" name="yesno" value="YES"> Já</label>
+                <label style="margin-left:16px"><input type="radio" name="yesno" value="NO"> Nei</label>
+              </div>
+            </div>
+          {% else %}
+            <div class="form-field" style="grid-column: 1 / -1;">
+              <p class="muted">
+                Raðaðu kostum. Raða 1 er uppáhald. Þú mátt sleppa aftari sætum
+                en mátt hvorki sleppa fyrri sætum né endurtaka kosti.
+              </p>
+            </div>
+
+            <div id="ranked-root" data-options='{{ options | tojson }}' style="grid-column: 1 / -1;">
+              <div class="form-grid">
+                {% for i in range(1, (options|length)+1) %}
+                  <div class="form-field">
+                    <label for="rank_{{ i }}">Raða {{ i }}</label>
+                    <select id="rank_{{ i }}" name="rank_{{ i }}" class="input rank-select" data-rank="{{ i }}">
+                      <option value="">— sleppa —</option>
+                      {% for opt in options %}
+                        <option value="{{ opt }}">{{ opt }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="button-row" style="grid-column: 1 / -1; margin-top:6px;">
+            <button class="btn" type="submit">Senda atkvæði</button>
+            <a class="btn secondary" href="{{ url_for('voting.election_detail', election_id=election.id) }}">Hætta við</a>
+          </div>
+        </form>
+
+        {% if options|length > 1 %}
+          <script src="{{ url_for('static', filename='js/ranked.js') }}"></script>
+        {% endif %}
+      {% endif %}
+    {% else %}
+      {% if election.is_upcoming() %}
+        <p class="muted">Kosning er ekki hafin.</p>
+      {% else %}
+        <p class="muted">Kosningu lokið.</p>
       {% endif %}
     {% endif %}
-  {% endif %}
 
-  {% if session.get('is_admin') and not election.is_open() %}
-    <div style="margin-top:18px">
-      <a class="btn secondary" href="{{ url_for('voting.export_votes', election_id=election.id) }}">Download curated votes (CSV)</a>
-    </div>
-  {% endif %}
+  {% endcall %}
 
 {% endblock %}
