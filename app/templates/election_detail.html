@@ -46,27 +46,40 @@
           {% else %}
             <div class="form-field" style="grid-column: 1 / -1;">
               <p class="muted">
-                Raðaðu kostum. Raða 1 er uppáhald. Þú mátt sleppa aftari sætum
-                en mátt hvorki sleppa fyrri sætum né endurtaka kosti.
+                Dragðu yfir eða ýttu á „Velja“ til að bæta í röðun. Fyrsta val er efst.
               </p>
             </div>
 
-            <div id="ranked-root" data-options='{{ options | tojson }}' style="grid-column: 1 / -1;">
-              <div class="form-grid">
-                {% for i in range(1, (options|length)+1) %}
-                  <div class="form-field">
-                    <label for="rank_{{ i }}">Raða {{ i }}</label>
-                    <select id="rank_{{ i }}" name="rank_{{ i }}" class="input rank-select" data-rank="{{ i }}">
-                      <option value="">— sleppa —</option>
-                      {% for opt in options %}
-                        <option value="{{ opt }}">{{ opt }}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                {% endfor %}
+            <div id="ranked-root"
+                 data-options='{{ options | tojson }}'
+                 style="grid-column: 1 / -1;">
+              <div class="rank-grid">
+                <div class="rank-col">
+                  <h3 class="rank-heading">Kostir</h3>
+                  <ul id="rank-available" class="rank-list" aria-label="Kostir">
+                    {# JS will populate from data-options #}
+                  </ul>
+                </div>
+
+                <div class="rank-col rank-col--picked">
+                  <h3 class="rank-heading">Röðun þín</h3>
+                  <ol id="rank-picked" class="rank-list" aria-label="Röðun þín">
+                    {# Start empty; items added by click/drag always append to end #}
+                  </ol>
+                </div>
               </div>
+
+              <!-- Hidden inputs get injected on submit as rank_1, rank_2, ... -->
+              <div id="rank-hidden"></div>
+
+              <p class="help" style="margin-top:8px">
+                Vísbending: Dragðu valkosti yfir í „Röðun þín“ eða notaðu hnappinn „Velja“.
+                Í „Röðun þín“ er hægt að raða með því að draga eða nota ↑/↓.
+              </p>
             </div>
           {% endif %}
+
+
 
           <div class="button-row" style="grid-column: 1 / -1; margin-top:6px;">
             <button class="btn" type="submit">Senda atkvæði</button>
@@ -75,7 +88,7 @@
         </form>
 
         {% if options|length > 1 %}
-          <script src="{{ url_for('static', filename='js/ranked.js') }}"></script>
+          <script src="{{ url_for('static', filename='js/ranked_dnd.js') }}" defer></script>
         {% endif %}
       {% endif %}
     {% else %}

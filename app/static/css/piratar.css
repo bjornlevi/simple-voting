@@ -13,6 +13,7 @@
      10. Feedback (flash messages)
      11. Footer
      12. Accessibility / Focus
+     13. Ranked UI
    ===================================================================== */
 
 
@@ -149,26 +150,45 @@ img{ max-width:100%; display:block; }
 
 
 /* =============== 05. NAVIGATION / HEADER ============================ */
+:root{
+  /* Tunables */
+  --nav-pad-x: 24px;          /* desktop left/right padding inside nav */
+  --nav-pad-x-mobile: 16px;   /* mobile left/right padding */
+  --nav-gap: 24px;            /* space between items */
+  --brand-size: 34px;         /* logo size */
+}
+
+/* Header bar */
 .header{
   background: var(--brand-purple);
   border-bottom: 0;
+  color:#fff;
 }
+
+/* Top nav */
 .nav{
-  display:flex; align-items:center; gap:24px; padding:14px 0;
-  text-transform: uppercase; letter-spacing: var(--ls-05); font-weight: 700;
+  display:flex;
+  align-items:center;
+  gap: var(--nav-gap);
+  padding-block: 14px;
+  /* container may wrap this; we still enforce side padding for small screens */
 }
+
+/* Brand (left) */
 .brand{
-  display:flex; align-items:center; gap:12px; margin-right:auto;
-  text-decoration:none; color:#fff;
+  display:flex; align-items:center; gap:12px;
+  margin-right:auto; text-decoration:none; color:#fff;
 }
 .brand:hover{ color: var(--accent-yellow); }
-.brand-mark{ width:34px; height:34px; }
-.brand-text{ font-weight:900; letter-spacing: var(--ls-05); color:#fff; }
+.brand-mark{ width:var(--brand-size); height:var(--brand-size); display:block; }
+.brand-text{ font-weight:900; letter-spacing: var(--ls-05); color:#fff; text-transform: uppercase; }
+
+/* Right side items */
 .nav-right{ display:flex; align-items:center; gap:12px; }
-.nav-link{ color:#fff; text-decoration:none; }
+.nav-link{ color:#fff; text-decoration:none; text-transform: uppercase; letter-spacing: var(--ls-05); font-weight:700; }
 .nav-link:hover{ color: var(--accent-yellow); }
 
-/* Buttons keep pill style; secondary stays light on dark header */
+/* Buttons: pill style; secondary stays light on dark header */
 .btn{
   display:inline-flex; align-items:center; justify-content:center;
   min-width:112px; height:42px; padding:0 16px;
@@ -183,6 +203,34 @@ img{ max-width:100%; display:block; }
 .btn.secondary:hover{ border-color: var(--color-primary); }
 /* Optional loud CTA (yellow) */
 .btn.attention{ background: var(--accent-yellow); color:#000; border:2px solid #000; }
+
+/* Focus visibility (keyboard users) */
+.nav a:focus-visible,
+.btn:focus-visible{
+  outline:3px solid var(--accent-yellow);
+  outline-offset:2px;
+  border-radius:10px;
+}
+
+/* --- Mobile adjustments (keeps logo and buttons off edges) --- */
+@media (max-width: 640px){
+  .nav{
+    padding-left: max(var(--nav-pad-x-mobile), env(safe-area-inset-left));
+    padding-right: max(var(--nav-pad-x-mobile), env(safe-area-inset-right));
+    gap: 16px; /* slightly tighter on mobile */
+  }
+  .brand{ padding-left: 2px; }   /* tiny breathing room */
+  .nav-right{ gap: 8px; }
+  .btn{ min-width: 96px; }       /* avoid crowding on small screens */
+}
+
+/* Optional: ensure generic .container doesn’t negate mobile padding */
+@media (max-width: 640px){
+  .container{
+    padding-left: max(var(--nav-pad-x-mobile), env(safe-area-inset-left));
+    padding-right: max(var(--nav-pad-x-mobile), env(safe-area-inset-right));
+  }
+}
 
 /* =============== 06. TYPOGRAPHY HELPERS ============================= */
 h1,h2,h3{ margin:0 0 .5rem; line-height: var(--lh-120); letter-spacing: var(--ls-02); }
@@ -452,4 +500,91 @@ h3{ font-weight:600; font-size: 1.125rem; }
   display:grid;
   gap:16px;
   grid-template-columns:1fr;
+}
+
+/* =============== 13. Ranked UI ========================== */
+/* Tunables for quick tweaks */
+:root{
+  --rank-gap: 16px;
+  --rank-item-gap: 8px;
+  --rank-item-radius: 10px;
+  --rank-item-border: 1.5px;         /* unified (was 1 / 1.5) */
+  --rank-list-minh: 64px;            /* unified (was 60 / 64) */
+  --rank-col-radius: 12px;
+  --rank-col-pad: 12px;
+  --rank-focus-outline: 3px;
+  --rank-highlight-bg: rgba(123,104,238,0.06);
+}
+
+/* Layout */
+.rank-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:var(--rank-gap);
+}
+@media (max-width:760px){
+  .rank-grid{ grid-template-columns:1fr; }
+}
+
+/* Columns */
+.rank-col{
+  background:var(--color-white);
+  border:1px solid var(--color-gray-2);
+  border-radius:var(--rank-col-radius);
+  padding:var(--rank-col-pad);
+}
+.rank-heading{
+  margin:0 0 8px;
+  font-size:1rem;
+  font-weight:700;
+}
+
+/* Lists & items */
+.rank-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  min-height:var(--rank-list-minh);
+}
+.rank-item{
+  display:grid;
+  grid-template-columns:24px 1fr auto;
+  align-items:center;
+  gap:var(--rank-item-gap);
+  padding:8px;
+  border:var(--rank-item-border) solid var(--color-gray-2);
+  border-radius:var(--rank-item-radius);
+  background:var(--color-white);
+  margin-bottom:8px;
+}
+.rank-item .handle{
+  cursor:grab;
+  user-select:none;
+  color:var(--color-gray-7);
+}
+.rank-item.dragging{ opacity:.6; }
+.rank-item:focus{
+  outline:var(--rank-focus-outline) solid var(--color-primary);
+  outline-offset:2px;
+}
+
+/* Item actions */
+.item-actions{ display:flex; gap:6px; }
+
+/* Tiny buttons: unify sizing */
+.btn.tiny{
+  height:28px;
+  min-width:48px;   /* unified (was 32 / 48) */
+  padding:0 10px;
+  border-radius:8px;
+  font-size:12px;
+}
+
+/* Drop target highlight for picked list */
+.rank-col--picked .rank-list.drop-highlight,
+#rank-picked.drop-highlight{
+  outline:3px dashed var(--color-primary);
+  outline-offset:4px;
+  background:var(--rank-highlight-bg);
+  transition:background .15s ease;
 }
