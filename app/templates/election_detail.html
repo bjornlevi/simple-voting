@@ -19,9 +19,7 @@
         <span class="tag">Kosning hefst: {{ utc_to_local_human(election.start_at) }}</span>
       {% else %}
         <span class="tag closed">Kosningu lokið</span>
-        {% if is_admin %}
-          <a class="btn secondary" href="{{ url_for('voting.export_votes', election_id=election.id) }}">Export CSV</a>
-        {% endif %}
+        <a class="btn secondary" href="{{ url_for('voting.export_votes', election_id=election.id) }}">Export CSV</a>
       {% endif %}
     </div>
 
