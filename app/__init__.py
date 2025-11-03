@@ -81,6 +81,12 @@ def create_app():
         return url_for("static", filename=val)
     app.jinja_env.globals["asset"] = asset
 
+    def staticv(filename: str) -> str:
+        """Build /static URL with a cache-busting version."""
+        return url_for("static", filename=filename, v=os.environ.get("BUILD_REV", "dev"))
+
+    app.jinja_env.globals["staticv"] = staticv
+
     # Optionally load .env in dev
     try:
         from dotenv import load_dotenv
