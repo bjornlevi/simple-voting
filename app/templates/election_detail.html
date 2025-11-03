@@ -30,6 +30,28 @@
 
       {% if already %}
         <p class="muted">Þú hefur þegar greitt atkvæði í þessari kosningu.</p>
+        <!-- User receipt -->
+        {% if receipt_hash %}
+          <div class="brand-card" style="margin-top:12px">
+            <h3 style="margin:0 0 6px;">Kvittun fyrir atkvæði</h3>
+            <p style="margin:0 0 8px;">
+              Geymdu þennan kóða. Hann staðfestir að þú hafir skráð atkvæði
+              í þessari kosningu, án tengingar við innihald atkvæðisins.
+            </p>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <code class="receipt" style="font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.95rem;
+                                           background:#fff; color:#000; padding:6px 8px; border:1px solid var(--color-gray-2);
+                                           border-radius:6px; user-select:all;">
+                {{ receipt_hash }}
+              </code>
+              <button class="btn tiny secondary"
+                      type="button"
+                      onclick="navigator.clipboard.writeText('{{ receipt_hash }}'); this.textContent='Afritað';">
+                Afrita
+              </button>
+            </div>
+          </div>
+        {% endif %}
       {% else %}
         <h2>Greiddu atkvæði</h2>
 
@@ -79,8 +101,6 @@
             </div>
           {% endif %}
 
-
-
           <div class="button-row" style="grid-column: 1 / -1; margin-top:6px;">
             <button class="btn" type="submit">Senda atkvæði</button>
             <a class="btn secondary" href="{{ url_for('voting.election_detail', election_id=election.id) }}">Hætta við</a>
@@ -95,7 +115,45 @@
       {% if election.is_upcoming() %}
         <p class="muted">Kosning er ekki hafin.</p>
       {% else %}
-        <p class="muted">Kosningu lokið.</p>
+        <span class="tag closed">Kosningu lokið</span>
+
+        <!-- Election stats -->
+        <div class="brand-card" style="margin-top:12px">
+          <h3 style="margin:0 0 6px;">Yfirlit atkvæða</h3>
+          <div class="row" style="gap:16px; flex-wrap:wrap;">
+            <div>
+              <div style="font-size:.9rem;">Fjöldi skráðra atkvæða</div>
+              <div style="font-weight:700; font-size:1.1rem;">{{ registry_count }}</div>
+            </div>
+            <div>
+              <div style="font-size:.9rem;">Fjöldi atkvæðaseðla</div>
+              <div style="font-weight:700; font-size:1.1rem;">{{ votes_count }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users receipt -->
+        {% if receipt_hash %}
+          <div class="brand-card" style="margin-top:12px">
+            <h3 style="margin:0 0 6px;">Kvittun fyrir atkvæði</h3>
+            <p style="margin:0 0 8px;">
+              Geymdu þennan kóða. Hann staðfestir að þú hafir skráð atkvæði
+              í þessari kosningu, án tengingar við innihald atkvæðisins.
+            </p>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <code class="receipt" style="font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.95rem;
+                                           background:#fff; color:#000; padding:6px 8px; border:1px solid var(--color-gray-2);
+                                           border-radius:6px; user-select:all;">
+                {{ receipt_hash }}
+              </code>
+              <button class="btn tiny secondary"
+                      type="button"
+                      onclick="navigator.clipboard.writeText('{{ receipt_hash }}'); this.textContent='Afritað';">
+                Afrita
+              </button>
+            </div>
+          </div>
+        {% endif %}
       {% endif %}
     {% endif %}
 

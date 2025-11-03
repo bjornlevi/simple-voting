@@ -3,6 +3,7 @@ from datetime import datetime, date, UTC
 import json, csv, random, os, re
 from pathlib import Path
 from sqlalchemy.engine import make_url
+from sqlalchemy import func
 from flask import (
     Blueprint, render_template, redirect, url_for, request,
     flash, abort, send_file, current_app, session
@@ -41,7 +42,7 @@ def election_detail(election_id: int):
     if not current_kennitala():
         return redirect(url_for("main.login", next=url_for("voting.election_detail", election_id=election.id)))
 
-    # shuffle options once per user per election, keep stable in session
+    # shuffle options per user (unchanged) ...
     key = f"shuffled_options_e{election.id}"
     if key not in session:
         opts = election.options()[:]
@@ -49,13 +50,38 @@ def election_detail(election_id: int):
         session[key] = opts
     shuffled = session[key]
 
-    already = VotingRegistry.query.filter_by(election_id=election.id, kennitala=current_kennitala()).first()
+    # Fetch the registry row (not just a bool)
+    reg = VotingRegistry.query.filter_by(
+        election_id=election.id, kennitala=current_kennitala()
+    ).first()
+
+    # Compute receipt if user has voted
+    receipt_hash = None
+    if reg:
+        from app.services.hashing import compute_registry_receipt
+        receipt_hash = compute_registry_receipt(
+            election.id,
+            reg.kennitala,
+            reg.timestamp,
+            salt=election.salt,
+            secret=current_app.config.get("SECRET_KEY"),
+        )
+
+    # Totals for finished elections (cheap even if we compute always)
+    registry_count = db.session.query(func.count(VotingRegistry.id))\
+                               .filter_by(election_id=election.id).scalar()
+    votes_count    = db.session.query(func.count(Vote.id))\
+                               .filter_by(election_id=election.id).scalar()
+
     return render_template(
         "election_detail.html",
         election=election,
-        already=bool(already),
+        already=bool(reg),
+        receipt_hash=receipt_hash,              # existing from previous step
         default_image=current_app.config["DEFAULT_IMAGE"],
         shuffled_options=shuffled,
+        registry_count=registry_count,          # NEW
+        votes_count=votes_count,                # NEW
     )
 
 @voting_bp.route("/<int:election_id>/vote", methods=["POST"])
@@ -126,7 +152,7 @@ def cast_vote(election_id: int):
     reg = VotingRegistry(
         election_id=election.id,
         kennitala=kt,
-        timestamp=datetime.now(UTC).replace(second=0, microsecond=0),  # UPDATED
+        timestamp=datetime.now(UTC),
     )
     db.session.add(reg)
 
