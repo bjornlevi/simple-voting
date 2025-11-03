@@ -1,6 +1,6 @@
 # app/controllers/voting.py
 from datetime import datetime, date, UTC
-import json, csv, random, os
+import json, csv, random, os, re
 from pathlib import Path
 from sqlalchemy.engine import make_url
 from flask import (
@@ -145,21 +145,25 @@ def export_votes(election_id: int):
     votes = Vote.query.filter_by(election_id=election.id).order_by(Vote.id.asc()).all()
     options = election.options()
 
-    # --- sanitize helper: remove internal CR/LF and trim ---
+    # --- sanitize helper: remove any line breaks / weird separators and trim ---
+    _WS_RE = re.compile(r"[\r\n\u2028\u2029\t]+")   # CR, LF, Unicode LS/PS, tabs
+    _SP_RE = re.compile(r"\s+")                     # collapse runs of whitespace
+
     def safe_cell(val):
         if val is None:
             return ""
         if isinstance(val, str):
-            # collapse any CR/LF inside labels into a single space
-            return " ".join(val.replace("\r", "").splitlines()).strip()
+            s = _WS_RE.sub(" ", val)
+            s = _SP_RE.sub(" ", s).strip()
+            return s
         return val
 
-    # write to the exports folder next to the DB
     export_dir: Path = _export_dir()
     tmp_path: Path = export_dir / f"election_{election.id}_votes.csv"
 
-    with open(tmp_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f, lineterminator="\n", quoting=csv.QUOTE_MINIMAL)
+    # Use BOM so Excel opens UTF-8 nicely; quote all; CRLF lines.
+    with open(tmp_path, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.writer(f, lineterminator="\r\n", quoting=csv.QUOTE_ALL)
 
         if len(options) == 1:
             writer.writerow(["election_id", "vote_date", "type", "question", "vote", "prev_hash", "vote_hash"])
@@ -181,8 +185,7 @@ def export_votes(election_id: int):
             for v in votes:
                 payload = json.loads(v.vote_json)
                 ranking = [safe_cell(x) for x in payload.get("ranking", [])]
-                # pad to fixed width
-                ranking += [""] * (len(options) - len(ranking))
+                ranking += [""] * (len(options) - len(ranking))  # pad
                 row = [
                     election.id,
                     v.vote_date.isoformat(),
@@ -193,5 +196,4 @@ def export_votes(election_id: int):
                 ]
                 writer.writerow(row)
 
-    return send_file(str(tmp_path), as_attachment=True,
-                     download_name=f"election_{election.id}_votes.csv")
+    return send_file(str(tmp_path), as_attachment=True, download_name=f"election_{election.id}_votes.csv")
