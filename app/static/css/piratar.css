@@ -588,3 +588,119 @@ h3{ font-weight:600; font-size: 1.125rem; }
   background:var(--rank-highlight-bg);
   transition:background .15s ease;
 }
+
+/* Let the middle column shrink and wrap instead of forcing overflow */
+.rank-item{
+  grid-template-columns: 24px minmax(0, 1fr) auto; /* key: minmax(0,1fr) */
+}
+.rank-item .label{
+  min-width: 0;                 /* allow shrinking */
+  overflow-wrap: anywhere;      /* wrap long words/names */
+  word-break: break-word;
+}
+
+/* Allow action buttons to wrap if needed */
+.item-actions{
+  display:flex; gap:6px; flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Keep lists from clipping; allow scrolling their own contents if needed */
+.rank-col{
+  min-width: 0;                 /* grid child can shrink */
+}
+.rank-list{
+  overflow: visible;            /* default; switch to auto if you want scroll */
+}
+
+/* Tighter controls on narrow screens */
+@media (max-width: 640px){
+  .rank-grid{ grid-template-columns: 1fr; }
+
+  /* So columns don’t exceed viewport */
+  .rank-col{ overflow: auto; }
+
+  /* Smaller “tiny” buttons so they don’t push out of view */
+  .btn.tiny{
+    min-width: auto;            /* remove hard mins that cause overflow */
+    height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  /* Slightly reduce overall button width in the header too */
+  .btn{ min-width: 96px; }
+}
+
+/* If you still see horizontal scroll somewhere, this guard helps:
+   it prevents children from overflowing the screen due to long words */
+.container, .election-card, .rank-grid, .rank-col{
+  min-width: 0;
+}
+
+@media (max-width: 640px){
+  .rank-item .label{
+    display: -webkit-box;
+    -webkit-line-clamp: 2;      /* show up to 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Ranked – keep label on one line and shrink actions */
+.rank-item{
+  grid-template-columns: 20px minmax(0,1fr) auto;  /* middle can shrink */
+}
+.rank-item .label{
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;      /* no second line like your screenshot */
+}
+
+/* Action cluster: icon-only, fixed size */
+.item-actions{ display:flex; gap:6px; flex-wrap:nowrap; }
+
+/* Circular icon buttons */
+.btn.icon{
+  min-width: 28px; width: 28px; height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  line-height: 1;
+  font-weight: 700;
+}
+.btn.icon.danger{ background:#b2071d; color:#fff; border:1px solid #8e0516; }
+.btn.icon.secondary{
+  background:#fff; color:#000; border:1.5px solid var(--color-gray-2);
+}
+.btn.icon:hover{ transform:none; box-shadow:none; } /* icons don’t “float” */
+
+/* The choose button: show text normally, but swap to + on tiny viewports */
+.choose-icon{ display:none; }
+@media (max-width: 420px){
+  .choose-text{ display:none; }
+  .choose-icon{ display:inline; }
+  .btn.tiny{ min-width: 32px; padding:0 8px; }     /* tighter on small phones */
+}
+
+/* Extra mobile safety: keep columns inside the viewport */
+@media (max-width: 640px){
+  .rank-grid{ grid-template-columns: 1fr; }
+  .rank-col{ min-width: 0; overflow: hidden; }
+}
+
+/* Rows are draggable anywhere */
+.rank-item{
+  grid-template-columns: minmax(0,1fr) auto; /* label | actions */
+  cursor: grab;
+}
+.rank-item:active{ cursor: grabbing; }
+
+/* Keep label single-line with ellipsis */
+.rank-item .label{
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

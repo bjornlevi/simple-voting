@@ -10,6 +10,7 @@
   const opts   = JSON.parse(root.dataset.options || '[]');
 
   // Utilities
+  // Available list item
   const makeAvailItem = (text) => {
     const li = document.createElement('li');
     li.className = 'rank-item';
@@ -17,15 +18,17 @@
     li.draggable = true;
     li.dataset.value = text;
     li.innerHTML = `
-      <span class="handle" aria-hidden="true">⋮⋮</span>
       <span class="label">${text}</span>
       <div class="item-actions">
-        <button type="button" class="btn tiny secondary choose">Velja</button>
+        <button type="button" class="btn tiny secondary choose" aria-label="Velja">
+          <span class="choose-text">Velja</span><span class="choose-icon" aria-hidden="true">+</span>
+        </button>
       </div>
     `;
     return li;
   };
 
+  // Picked list item
   const makePickedItem = (text) => {
     const li = document.createElement('li');
     li.className = 'rank-item';
@@ -33,16 +36,16 @@
     li.draggable = true;
     li.dataset.value = text;
     li.innerHTML = `
-      <span class="handle" aria-hidden="true">⋮⋮</span>
       <span class="label">${text}</span>
       <div class="item-actions">
-        <button type="button" class="btn tiny secondary up" aria-label="Færa upp">↑</button>
-        <button type="button" class="btn tiny secondary down" aria-label="Færa niður">↓</button>
-        <button type="button" class="btn tiny danger remove" aria-label="Sleppa">Sleppa</button>
+        <button type="button" class="btn icon up" aria-label="Færa upp">↑</button>
+        <button type="button" class="btn icon down" aria-label="Færa niður">↓</button>
+        <button type="button" class="btn icon danger remove" aria-label="Sleppa">×</button>
       </div>
     `;
     return li;
   };
+
 
   // Populate ALL options on the left; right starts empty
   avail.innerHTML = '';
