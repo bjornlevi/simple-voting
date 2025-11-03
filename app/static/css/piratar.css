@@ -151,83 +151,90 @@ img{ max-width:100%; display:block; }
 
 /* =============== 05. NAVIGATION / HEADER ============================ */
 :root{
-  /* Tunables */
-  --nav-pad-x: 24px;          /* desktop left/right padding inside nav */
-  --nav-pad-x-mobile: 16px;   /* mobile left/right padding */
-  --nav-gap: 24px;            /* space between items */
-  --brand-size: 34px;         /* logo size */
+  --nav-gap: 24px;
+  --nav-pad-x-desktop: 24px;
+  --nav-pad-x-mobile: 16px;
+  --brand-size: 34px;
 }
 
-/* Header bar */
+/* Bar */
 .header{
   background: var(--brand-purple);
-  border-bottom: 0;
-  color:#fff;
+  color: #fff;
 }
 
-/* Top nav */
+/* Row */
 .nav{
-  display:flex;
-  align-items:center;
+  display: flex;
+  align-items: center;
   gap: var(--nav-gap);
   padding-block: 14px;
-  /* container may wrap this; we still enforce side padding for small screens */
 }
 
 /* Brand (left) */
 .brand{
   display:flex; align-items:center; gap:12px;
   margin-right:auto; text-decoration:none; color:#fff;
+  min-width: 0; /* allow shrink */
 }
 .brand:hover{ color: var(--accent-yellow); }
 .brand-mark{ width:var(--brand-size); height:var(--brand-size); display:block; }
-.brand-text{ font-weight:900; letter-spacing: var(--ls-05); color:#fff; text-transform: uppercase; }
+.brand-text{
+  font-weight:900; letter-spacing:var(--ls-05); color:#fff; text-transform:uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
-/* Right side items */
-.nav-right{ display:flex; align-items:center; gap:12px; }
-.nav-link{ color:#fff; text-decoration:none; text-transform: uppercase; letter-spacing: var(--ls-05); font-weight:700; }
+/* Right cluster */
+.nav-right{ display:flex; align-items:center; gap:12px; flex: 0 0 auto; }
+.nav-link{
+  color:#fff; text-decoration:none; text-transform:uppercase;
+  letter-spacing:var(--ls-05); font-weight:700;
+}
 .nav-link:hover{ color: var(--accent-yellow); }
 
-/* Buttons: pill style; secondary stays light on dark header */
+/* Header buttons */
 .btn{
   display:inline-flex; align-items:center; justify-content:center;
-  min-width:112px; height:42px; padding:0 16px;
+  min-width:112px; height:42px; padding:0 16px; flex:0 0 auto;
   border-radius:999px; border:1px solid transparent;
-  background:var(--color-primary); color:var(--color-white);
-  font-weight:700; cursor:pointer; text-decoration:none;
-  transition: transform .03s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
-  flex:0 0 auto;
+  background:var(--color-primary); color:#fff; font-weight:700; cursor:pointer;
+  text-decoration:none; transition:transform .03s, box-shadow .2s, background .2s, border-color .2s;
 }
 .btn:hover{ transform:translateY(-1px); box-shadow:var(--shadow-2); }
 .btn.secondary{ background:#fff; color:#000; border:2px solid var(--color-gray-2); }
 .btn.secondary:hover{ border-color: var(--color-primary); }
-/* Optional loud CTA (yellow) */
-.btn.attention{ background: var(--accent-yellow); color:#000; border:2px solid #000; }
+.btn.attention{ background:var(--accent-yellow); color:#000; border:2px solid #000; }
 
-/* Focus visibility (keyboard users) */
-.nav a:focus-visible,
-.btn:focus-visible{
-  outline:3px solid var(--accent-yellow);
-  outline-offset:2px;
-  border-radius:10px;
+/* Focus */
+.nav a:focus-visible, .btn:focus-visible{
+  outline:3px solid var(--accent-yellow); outline-offset:2px; border-radius:10px;
 }
 
-/* --- Mobile adjustments (keeps logo and buttons off edges) --- */
+/* --- Mobile layout (wrap, safe-area padding, no overlap) --- */
 @media (max-width: 640px){
   .nav{
-    padding-left: max(var(--nav-pad-x-mobile), env(safe-area-inset-left));
+    flex-wrap: wrap;                 /* allow two rows */
+    gap: 12px;
+    padding-left:  max(var(--nav-pad-x-mobile), env(safe-area-inset-left));
     padding-right: max(var(--nav-pad-x-mobile), env(safe-area-inset-right));
-    gap: 16px; /* slightly tighter on mobile */
   }
-  .brand{ padding-left: 2px; }   /* tiny breathing room */
-  .nav-right{ gap: 8px; }
-  .btn{ min-width: 96px; }       /* avoid crowding on small screens */
+  .brand{ flex: 1 1 auto; }
+  .brand-text{ max-width: 60vw; }    /* prevent pushing buttons off-screen */
+  .nav-right{
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .btn{ min-width: 96px; }
+  @media (max-width: 360px){
+    .brand-text{ display:none; }     /* keep only the logo on tiny phones */
+  }
 }
 
-/* Optional: ensure generic .container doesn’t negate mobile padding */
+/* Keep page content off the edges on phones */
 @media (max-width: 640px){
   .container{
-    padding-left: max(var(--nav-pad-x-mobile), env(safe-area-inset-left));
+    padding-left:  max(var(--nav-pad-x-mobile), env(safe-area-inset-left));
     padding-right: max(var(--nav-pad-x-mobile), env(safe-area-inset-right));
   }
 }
@@ -703,4 +710,60 @@ h3{ font-weight:600; font-size: 1.125rem; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ==== Ranked UI – readable multi-line labels ==== */
+/* Two columns: label wraps freely; actions stay to the right */
+.rank-item{
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: flex-start;          /* rows grow with content */
+  cursor: grab;
+}
+.rank-item:active{ cursor: grabbing; }
+
+/* Label: allow full text, wrap anywhere if needed */
+.rank-item .label{
+  min-width: 0;
+  white-space: normal;              /* <<< allow multiple lines */
+  overflow-wrap: anywhere;          /* break long tokens */
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+/* Action cluster: right-aligned, stays compact, vertically centered on tall rows */
+.item-actions{
+  display: flex; gap: 6px; flex-wrap: wrap;
+  align-self: center;               /* center vs multi-line label */
+}
+
+/* Compact circular icon buttons (↑ ↓ ×) */
+.btn.icon{
+  width: 26px; height: 26px; min-width: 26px;
+  padding: 0; border-radius: 999px; line-height: 1; font-weight: 700;
+}
+.btn.icon.secondary{ background:#fff; color:#000; border:1.5px solid var(--color-gray-2); }
+.btn.icon.danger{ background:#b2071d; color:#fff; border:1px solid #8e0516; }
+.btn.icon:hover{ transform:none; box-shadow:none; }
+
+/* “Velja” button: text on desktop, icon on tiny phones */
+.choose-icon{ display:none; }
+@media (max-width: 420px){
+  .choose-text{ display:none; }
+  .choose-icon{ display:inline; }
+  .btn.tiny{ min-width: 32px; padding: 0 8px; font-size: 12px; }
+}
+
+/* Lists and columns won’t overflow horizontally */
+.rank-col, .rank-grid, .election-card, .container{ min-width: 0; }
+@media (max-width: 640px){
+  .rank-grid{ grid-template-columns: 1fr; }
+  .rank-col{ overflow: auto; }
+}
+
+/* Optional subtle grip */
+.rank-item{ position: relative; padding-left: 10px; }
+.rank-item::before{
+  content:""; position:absolute; left: 0; top: 10px; bottom:10px; width:4px;
+  opacity:.3; background-image: radial-gradient(currentColor 1px, transparent 1px);
+  background-size: 4px 4px; background-repeat: repeat-y; color: var(--color-gray-7);
 }
