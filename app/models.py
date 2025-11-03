@@ -30,6 +30,13 @@ class Election(db.Model):
     salt = db.Column(db.String(64), nullable=False)
     closed_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
+    # NEW: date-only cutoff (YYYY-MM-DD)
+    eligibility_cutoff = db.Column(db.Date, nullable=True)
+
+    # convenience
+    def eligibility_required(self) -> bool:
+        return self.eligibility_cutoff is not None
+
     def options(self):
         return json.loads(self.options_json)
 

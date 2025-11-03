@@ -85,13 +85,20 @@ def create_election():
             flash("End time must be after start time", "error")
             return redirect(url_for("admin.create_election"))
 
+        cutoff_str = request.form.get("eligibility_cutoff","").strip()
+        cutoff_date = None
+        if cutoff_str:
+            try:
+                cutoff_date = datetime.strptime(cutoff_str, "%Y-%m-%d").date()
+            except ValueError:
+                flash("Gjaldgengi: ógilt dagsetningaform (YYYY-MM-DD)", "error")
+                return redirect(url_for("admin.create_election"))
+
         election = Election(
-            title=title,
-            description=description,
-            image_url=image_url,
+            title=title, description=description, image_url=image_url,
             options_json=json.dumps(options),
-            start_at=start_at,
-            end_at=end_at,
+            start_at=start_at, end_at=end_at,
+            eligibility_cutoff=cutoff_date,  # NEW
             salt=secrets.token_hex(16),
         )
         db.session.add(election)

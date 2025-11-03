@@ -11,6 +11,7 @@ from flask import (
 from app.models import Election, Vote, VotingRegistry
 from app.services.auth import current_kennitala
 from app.services.hashing import canonicalize_vote, compute_vote_hash
+from app.services.eligibility import user_is_eligible
 from app import db
 
 voting_bp = Blueprint("voting", __name__)
@@ -55,6 +56,31 @@ def election_detail(election_id: int):
         election_id=election.id, kennitala=current_kennitala()
     ).first()
 
+    use_ice = current_app.config.get("USE_ICEPIRATE", False)
+    eligible_flag = True
+    if use_ice and election.eligibility_required():
+        eligible_flag = user_is_eligible(
+            current_kennitala(),
+            election.eligibility_cutoff,
+            base=current_app.config["ICEPIRATE_BASE"],
+            api_key=current_app.config["ICEPIRATE_API_KEY"],
+            field=current_app.config.get("ICEPIRATE_FIELD", "ssn"),
+        )
+
+    eligibility_debug = None
+    if use_ice and election.eligibility_required():
+        from app.services.eligibility import debug_eligibility
+        ok, info = debug_eligibility(
+            current_kennitala(),
+            election.eligibility_cutoff,
+            base=current_app.config["ICEPIRATE_BASE"],
+            api_key=current_app.config["ICEPIRATE_API_KEY"],
+            field=current_app.config.get("ICEPIRATE_FIELD", "ssn"),
+        )
+        eligibility_debug = info
+        eligible_flag = ok  # keep source of truth
+
+
     # Compute receipt if user has voted
     receipt_hash = None
     if reg:
@@ -77,11 +103,13 @@ def election_detail(election_id: int):
         "election_detail.html",
         election=election,
         already=bool(reg),
-        receipt_hash=receipt_hash,              # existing from previous step
+        eligible_flag=eligible_flag,
+        receipt_hash=receipt_hash,           
         default_image=current_app.config["DEFAULT_IMAGE"],
         shuffled_options=shuffled,
-        registry_count=registry_count,          # NEW
-        votes_count=votes_count,                # NEW
+        registry_count=registry_count,        
+        votes_count=votes_count,
+        eligibility_debug=eligibility_debug
     )
 
 @voting_bp.route("/<int:election_id>/vote", methods=["POST"])
@@ -95,6 +123,22 @@ def cast_vote(election_id: int):
     if not election.is_open():
         flash("This election is not accepting votes at this time.", "error")
         return redirect(url_for("voting.election_detail", election_id=election.id))
+
+    # NEW: eligibility check
+    use_ice = current_app.config.get("USE_ICEPIRATE", False)
+
+    if use_ice and election.eligibility_required():
+        ok = user_is_eligible(
+            kt,
+            election.eligibility_cutoff,
+            base=current_app.config["ICEPIRATE_BASE"],
+            api_key=current_app.config["ICEPIRATE_API_KEY"],
+            field=current_app.config.get("ICEPIRATE_FIELD", "ssn"),
+        )
+        if not ok:
+            flash("Þú ert ekki gjaldgeng/ur í þessari kosningu (skráning nýrri en skilyrði leyfir).", "error")
+            return redirect(url_for("voting.election_detail", election_id=election.id))
+
 
     existing = VotingRegistry.query.filter_by(election_id=election.id, kennitala=kt).first()
     if existing:

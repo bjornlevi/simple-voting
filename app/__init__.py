@@ -6,6 +6,10 @@ from zoneinfo import ZoneInfo
 from markupsafe import Markup
 import os
 import markdown as md
+from app.config import Config
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # --- Locale / time ---
 REYKJAVIK = ZoneInfo("Atlantic/Reykjavik")
@@ -55,7 +59,7 @@ def create_app():
         # LOCAL: /static (default). PROD: set STATIC_URL_PATH=/vote/static
         static_url_path=os.environ.get("STATIC_URL_PATH", "/static"),
     )
-    app.config.from_object("app.config.Config")
+    app.config.from_object(Config)
 
     # Make helpers/filters available in Jinja
     app.jinja_env.globals.update(

@@ -10,13 +10,19 @@ import secrets; print(secrets.token_hex(32))
 PY
 )"
 
-# Sensible defaults
+# ---- Sensible defaults ----
 : "${DATABASE_URL:=sqlite:///elections.db}"
 # IMPORTANT: default image is a *static filename*, no leading /static
 : "${DEFAULT_IMAGE:=img/default_election_clean_dark.svg}"
 : "${FLASK_ENV:=production}"
 # LOCAL default: /static ; set to /vote/static in production (systemd env)
 : "${STATIC_URL_PATH:=/static}"
+
+# Icepirate integration (disabled by default)
+: "${USE_ICEPIRATE:=0}"                      # 0/1, false/true, off/on
+: "${ICEPIRATE_BASE:=}"                      # e.g. https://members.example.is
+: "${ICEPIRATE_API_KEY:=}"                   # JSON_API_KEY from Django
+: "${ICEPIRATE_FIELD:=ssn}"                  # ssn | username | name
 
 if [[ -f "$ENV_FILE" ]]; then
   cp "$ENV_FILE" "${ENV_FILE}.bak"
@@ -33,16 +39,28 @@ DEFAULT_IMAGE=${DEFAULT_IMAGE}
 FLASK_ENV=${FLASK_ENV}
 STATIC_URL_PATH=${STATIC_URL_PATH}
 
+# ---- Icepirate integration ----
+# Toggle the external voter-eligibility check:
+# 0 = disabled (everyone can vote while the election is open)
+# 1 = enabled  (require 'added' <= eligibility_cutoff from Django API)
+USE_ICEPIRATE=${USE_ICEPIRATE}
+ICEPIRATE_BASE=${ICEPIRATE_BASE}
+ICEPIRATE_API_KEY=${ICEPIRATE_API_KEY}
+ICEPIRATE_FIELD=${ICEPIRATE_FIELD}
+
 # Example: switch to Postgres
 # DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/elections
 
-# Production hint (set via systemd drop-in instead of here):
+# Production hint (prefer setting via systemd drop-in instead of here):
 # STATIC_URL_PATH=/vote/static
+# USE_ICEPIRATE=1
+# ICEPIRATE_BASE=https://members.example.is
+# ICEPIRATE_API_KEY=YOUR_JSON_API_KEY
+# ICEPIRATE_FIELD=ssn
 # BUILD_REV=\$(git -C /srv/simple-voting rev-parse --short HEAD)
 EOF
 
 echo "Wrote $ENV_FILE"
-
 echo ""
 echo "Next steps:"
 echo "  1) pip install -r requirements.txt"
