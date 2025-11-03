@@ -509,18 +509,19 @@ h3{ font-weight:600; font-size: 1.125rem; }
   grid-template-columns:1fr;
 }
 
-/* =============== 13. Ranked UI ========================== */
-/* Tunables for quick tweaks */
+/* =============== 13. RANKED UI (refactored) ========================== */
+/* Tunables */
 :root{
   --rank-gap: 16px;
   --rank-item-gap: 8px;
   --rank-item-radius: 10px;
-  --rank-item-border: 1.5px;         /* unified (was 1 / 1.5) */
-  --rank-list-minh: 64px;            /* unified (was 60 / 64) */
+  --rank-item-border: 1.5px;
+  --rank-list-minh: 64px;
   --rank-col-radius: 12px;
   --rank-col-pad: 12px;
   --rank-focus-outline: 3px;
   --rank-highlight-bg: rgba(123,104,238,0.06);
+  --rank-icon: 24px;                  /* size of ↑ ↓ × icon buttons */
 }
 
 /* Layout */
@@ -539,6 +540,7 @@ h3{ font-weight:600; font-size: 1.125rem; }
   border:1px solid var(--color-gray-2);
   border-radius:var(--rank-col-radius);
   padding:var(--rank-col-pad);
+  min-width:0;                         /* allow shrinking in grids */
 }
 .rank-heading{
   margin:0 0 8px;
@@ -546,48 +548,78 @@ h3{ font-weight:600; font-size: 1.125rem; }
   font-weight:700;
 }
 
-/* Lists & items */
+/* Lists */
 .rank-list{
   list-style:none;
   margin:0;
   padding:0;
   min-height:var(--rank-list-minh);
+  overflow:visible;                     /* change to auto if you want scroll */
 }
+
+/* Items (drag anywhere) */
 .rank-item{
   display:grid;
-  grid-template-columns:24px 1fr auto;
+  grid-template-columns:minmax(0,1fr) auto;  /* label | actions */
+  column-gap:var(--rank-item-gap);
   align-items:center;
-  gap:var(--rank-item-gap);
   padding:8px;
   border:var(--rank-item-border) solid var(--color-gray-2);
   border-radius:var(--rank-item-radius);
   background:var(--color-white);
   margin-bottom:8px;
-}
-.rank-item .handle{
   cursor:grab;
-  user-select:none;
-  color:var(--color-gray-7);
 }
+.rank-item:active{ cursor:grabbing; }
 .rank-item.dragging{ opacity:.6; }
 .rank-item:focus{
   outline:var(--rank-focus-outline) solid var(--color-primary);
   outline-offset:2px;
 }
 
-/* Item actions */
-.item-actions{ display:flex; gap:6px; }
+/* Label: show full text, wrap nicely */
+.rank-item .label{
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  line-height:1.35;
+}
 
-/* Tiny buttons: unify sizing */
+/* Actions cluster */
+.item-actions{
+  display:flex;
+  flex-wrap:wrap;                       /* may wrap under label on tight widths */
+  gap:6px;
+  justify-content:flex-end;
+  align-self:center;
+}
+
+/* Buttons */
 .btn.tiny{
   height:28px;
-  min-width:48px;   /* unified (was 32 / 48) */
+  min-width:48px;
   padding:0 10px;
   border-radius:8px;
   font-size:12px;
 }
+.btn.icon{
+  width:var(--rank-icon); height:var(--rank-icon); min-width:var(--rank-icon);
+  padding:0; border-radius:999px; line-height:1; font-size:12px; font-weight:700;
+}
+.btn.icon.secondary{ background:#fff; color:#000; border:1.5px solid var(--color-gray-2); }
+.btn.icon.danger{ background:#b2071d; color:#fff; border:1px solid #8e0516; }
+.btn.icon:hover{ transform:none; box-shadow:none; }
 
-/* Drop target highlight for picked list */
+/* “Velja” text on desktop; compact icon on very small phones */
+.choose-icon{ display:none; }
+@media (max-width:420px){
+  .choose-text{ display:none; }
+  .choose-icon{ display:inline; }
+  .btn.tiny{ min-width:32px; padding:0 8px; }
+}
+
+/* Drop target highlight */
 .rank-col--picked .rank-list.drop-highlight,
 #rank-picked.drop-highlight{
   outline:3px dashed var(--color-primary);
@@ -596,174 +628,27 @@ h3{ font-weight:600; font-size: 1.125rem; }
   transition:background .15s ease;
 }
 
-/* Let the middle column shrink and wrap instead of forcing overflow */
-.rank-item{
-  grid-template-columns: 24px minmax(0, 1fr) auto; /* key: minmax(0,1fr) */
-}
-.rank-item .label{
-  min-width: 0;                 /* allow shrinking */
-  overflow-wrap: anywhere;      /* wrap long words/names */
-  word-break: break-word;
-}
-
-/* Allow action buttons to wrap if needed */
-.item-actions{
-  display:flex; gap:6px; flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-/* Keep lists from clipping; allow scrolling their own contents if needed */
-.rank-col{
-  min-width: 0;                 /* grid child can shrink */
-}
-.rank-list{
-  overflow: visible;            /* default; switch to auto if you want scroll */
-}
-
-/* Tighter controls on narrow screens */
-@media (max-width: 640px){
-  .rank-grid{ grid-template-columns: 1fr; }
-
-  /* So columns don’t exceed viewport */
-  .rank-col{ overflow: auto; }
-
-  /* Smaller “tiny” buttons so they don’t push out of view */
-  .btn.tiny{
-    min-width: auto;            /* remove hard mins that cause overflow */
-    height: 28px;
-    padding: 0 8px;
-    font-size: 12px;
-    border-radius: 8px;
+/* Responsive reflow: put actions under label when tight */
+@media (max-width:560px){
+  .rank-item{
+    grid-template-columns:1fr;
+    row-gap:6px;
+    align-items:start;
   }
-
-  /* Slightly reduce overall button width in the header too */
-  .btn{ min-width: 96px; }
+  .item-actions{ justify-content:flex-start; }
 }
 
-/* If you still see horizontal scroll somewhere, this guard helps:
-   it prevents children from overflowing the screen due to long words */
-.container, .election-card, .rank-grid, .rank-col{
-  min-width: 0;
+/* Safety guards against horizontal overflow */
+.rank-col, .rank-grid, .election-card, .container{ min-width:0; }
+@media (max-width:640px){
+  .rank-col{ overflow:auto; }
 }
 
-@media (max-width: 640px){
-  .rank-item .label{
-    display: -webkit-box;
-    -webkit-line-clamp: 2;      /* show up to 2 lines */
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-}
-
-/* Ranked – keep label on one line and shrink actions */
-.rank-item{
-  grid-template-columns: 20px minmax(0,1fr) auto;  /* middle can shrink */
-}
-.rank-item .label{
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;      /* no second line like your screenshot */
-}
-
-/* Action cluster: icon-only, fixed size */
-.item-actions{ display:flex; gap:6px; flex-wrap:nowrap; }
-
-/* Circular icon buttons */
-.btn.icon{
-  min-width: 28px; width: 28px; height: 28px;
-  padding: 0;
-  border-radius: 999px;
-  line-height: 1;
-  font-weight: 700;
-}
-.btn.icon.danger{ background:#b2071d; color:#fff; border:1px solid #8e0516; }
-.btn.icon.secondary{
-  background:#fff; color:#000; border:1.5px solid var(--color-gray-2);
-}
-.btn.icon:hover{ transform:none; box-shadow:none; } /* icons don’t “float” */
-
-/* The choose button: show text normally, but swap to + on tiny viewports */
-.choose-icon{ display:none; }
-@media (max-width: 420px){
-  .choose-text{ display:none; }
-  .choose-icon{ display:inline; }
-  .btn.tiny{ min-width: 32px; padding:0 8px; }     /* tighter on small phones */
-}
-
-/* Extra mobile safety: keep columns inside the viewport */
-@media (max-width: 640px){
-  .rank-grid{ grid-template-columns: 1fr; }
-  .rank-col{ min-width: 0; overflow: hidden; }
-}
-
-/* Rows are draggable anywhere */
-.rank-item{
-  grid-template-columns: minmax(0,1fr) auto; /* label | actions */
-  cursor: grab;
-}
-.rank-item:active{ cursor: grabbing; }
-
-/* Keep label single-line with ellipsis */
-.rank-item .label{
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ==== Ranked UI – readable multi-line labels ==== */
-/* Two columns: label wraps freely; actions stay to the right */
-.rank-item{
-  grid-template-columns: minmax(0,1fr) auto;
-  align-items: flex-start;          /* rows grow with content */
-  cursor: grab;
-}
-.rank-item:active{ cursor: grabbing; }
-
-/* Label: allow full text, wrap anywhere if needed */
-.rank-item .label{
-  min-width: 0;
-  white-space: normal;              /* <<< allow multiple lines */
-  overflow-wrap: anywhere;          /* break long tokens */
-  word-break: break-word;
-  line-height: 1.35;
-}
-
-/* Action cluster: right-aligned, stays compact, vertically centered on tall rows */
-.item-actions{
-  display: flex; gap: 6px; flex-wrap: wrap;
-  align-self: center;               /* center vs multi-line label */
-}
-
-/* Compact circular icon buttons (↑ ↓ ×) */
-.btn.icon{
-  width: 26px; height: 26px; min-width: 26px;
-  padding: 0; border-radius: 999px; line-height: 1; font-weight: 700;
-}
-.btn.icon.secondary{ background:#fff; color:#000; border:1.5px solid var(--color-gray-2); }
-.btn.icon.danger{ background:#b2071d; color:#fff; border:1px solid #8e0516; }
-.btn.icon:hover{ transform:none; box-shadow:none; }
-
-/* “Velja” button: text on desktop, icon on tiny phones */
-.choose-icon{ display:none; }
-@media (max-width: 420px){
-  .choose-text{ display:none; }
-  .choose-icon{ display:inline; }
-  .btn.tiny{ min-width: 32px; padding: 0 8px; font-size: 12px; }
-}
-
-/* Lists and columns won’t overflow horizontally */
-.rank-col, .rank-grid, .election-card, .container{ min-width: 0; }
-@media (max-width: 640px){
-  .rank-grid{ grid-template-columns: 1fr; }
-  .rank-col{ overflow: auto; }
-}
-
-/* Optional subtle grip */
-.rank-item{ position: relative; padding-left: 10px; }
-.rank-item::before{
-  content:""; position:absolute; left: 0; top: 10px; bottom:10px; width:4px;
-  opacity:.3; background-image: radial-gradient(currentColor 1px, transparent 1px);
-  background-size: 4px 4px; background-repeat: repeat-y; color: var(--color-gray-7);
+/* ---- Optional subtle grip (add class 'rank-grip' to .rank-item if you want it) ---- */
+.rank-item.rank-grip{ position:relative; padding-left:10px; }
+.rank-item.rank-grip::before{
+  content:""; position:absolute; left:0; top:10px; bottom:10px; width:4px;
+  opacity:.3; color:var(--color-gray-7);
+  background-image: radial-gradient(currentColor 1px, transparent 1px);
+  background-size:4px 4px; background-repeat:repeat-y;
 }
