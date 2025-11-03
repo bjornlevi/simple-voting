@@ -2,7 +2,7 @@
 {% macro election_card(e, is_admin=False, default_image=None, variant='list') -%}
   <article class="media-card {{ 'media-card--detail' if variant == 'detail' }}">
     <div class="media-card__media">
-      <img src="{{ url_for('static', filename=(e.image_url or default_image)) }}" alt="" loading="lazy">
+      <img src="{{ asset(e.image_url, default_image) }}" alt="" loading="lazy">
     </div>
 
     <div class="media-card__content">
