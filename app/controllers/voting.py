@@ -146,54 +146,70 @@ def export_votes(election_id: int):
     options = election.options()
 
     # --- sanitize helper: remove any line breaks / weird separators and trim ---
-    _WS_RE = re.compile(r"[\r\n\u2028\u2029\t]+")   # CR, LF, Unicode LS/PS, tabs
-    _SP_RE = re.compile(r"\s+")                     # collapse runs of whitespace
+    _WS_BREAKS = re.compile(r"[\r\n\u2028\u2029]+")  # CR, LF, Unicode LS/PS
 
     def safe_cell(val):
         if val is None:
             return ""
         if isinstance(val, str):
-            s = _WS_RE.sub(" ", val)
-            s = _SP_RE.sub(" ", s).strip()
+            # 1) remove any linebreak characters completely (replace with space)
+            s = _WS_BREAKS.sub(" ", val)
+            # 2) collapse remaining whitespace runs, trim
+            s = re.sub(r"\s+", " ", s).strip()
+            # 3) optional: strip straight quotes to avoid Excel weirdness when not quoting
+            s = s.replace('"', "").replace("'", "")
             return s
         return val
 
     export_dir: Path = _export_dir()
     tmp_path: Path = export_dir / f"election_{election.id}_votes.csv"
 
-    # Use BOM so Excel opens UTF-8 nicely; quote all; CRLF lines.
-    with open(tmp_path, "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.writer(f, lineterminator="\r\n", quoting=csv.QUOTE_ALL)
+    # No BOM, no forced quoting, LF line endings
+    with open(tmp_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(
+            f,
+            lineterminator="\n",
+            quoting=csv.QUOTE_MINIMAL,   # no quotes unless a comma sneaks in
+            escapechar="\\",
+            doublequote=False,
+        )
 
         if len(options) == 1:
             writer.writerow(["election_id", "vote_date", "type", "question", "vote", "prev_hash", "vote_hash"])
             for v in votes:
-                payload = json.loads(v.vote_json)
-                row = [
+                p = json.loads(v.vote_json)
+                writer.writerow([
                     election.id,
                     v.vote_date.isoformat(),
-                    safe_cell(payload.get("type")),
-                    safe_cell(payload.get("option", "")),
-                    safe_cell(payload.get("vote", "")),
+                    safe_cell(p.get("type")),
+                    safe_cell(p.get("option", "")),
+                    safe_cell(p.get("vote", "")),
                     safe_cell(v.prev_hash or ""),
                     safe_cell(v.vote_hash),
-                ]
-                writer.writerow(row)
+                ])
         else:
-            header = ["election_id", "vote_date", "type"] + [f"rank_{i+1}" for i in range(len(options))] + ["prev_hash","vote_hash"]
+            header = ["election_id", "vote_date", "type"] \
+                     + [f"rank_{i+1}" for i in range(len(options))] \
+                     + ["prev_hash", "vote_hash"]
             writer.writerow(header)
+
             for v in votes:
-                payload = json.loads(v.vote_json)
-                ranking = [safe_cell(x) for x in payload.get("ranking", [])]
-                ranking += [""] * (len(options) - len(ranking))  # pad
-                row = [
+                p = json.loads(v.vote_json)
+                ranking = [safe_cell(x) for x in p.get("ranking", [])]
+                # pad to fixed width (no quotes on blanks)
+                ranking += [""] * (len(options) - len(ranking))
+                writer.writerow([
                     election.id,
                     v.vote_date.isoformat(),
-                    safe_cell(payload.get("type")),
+                    safe_cell(p.get("type")),
                     *ranking,
                     safe_cell(v.prev_hash or ""),
                     safe_cell(v.vote_hash),
-                ]
-                writer.writerow(row)
+                ])
 
-    return send_file(str(tmp_path), as_attachment=True, download_name=f"election_{election.id}_votes.csv")
+    return send_file(
+        str(tmp_path),
+        as_attachment=True,
+        download_name=f"election_{election.id}_votes.csv",
+        mimetype="text/csv; charset=utf-8"
+    )
