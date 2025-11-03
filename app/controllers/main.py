@@ -14,7 +14,7 @@ def index():
     # Show: all open or upcoming elections, plus those that ended within last 14 days
     elections = (Election.query
         .filter(Election.end_at >= (now - grace))
-        .order_by(Election.start_at.desc())
+        .order_by(Election.start_at.desc(), Election.id.desc())
         .all()
     )
     return render_template(
