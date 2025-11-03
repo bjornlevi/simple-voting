@@ -7,5 +7,5 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     DEFAULT_IMAGE = os.environ.get(
         "DEFAULT_IMAGE",
-        "/static/img/default_election_clean_dark.svg"
+        "img/default_election_clean_dark.svg"
     )
