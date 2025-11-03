@@ -1,6 +1,6 @@
 # app/controllers/voting.py
 from datetime import datetime, date, UTC
-import json, csv, random
+import json, csv, random, os
 from pathlib import Path
 from sqlalchemy.engine import make_url
 from flask import (
@@ -137,30 +137,61 @@ def cast_vote(election_id: int):
 @voting_bp.route("/<int:election_id>/export")
 def export_votes(election_id: int):
     election = Election.query.get_or_404(election_id)
+
+    # Block export while election is open
     if election.is_open():
         abort(403, description="Election not finished yet.")
 
     votes = Vote.query.filter_by(election_id=election.id).order_by(Vote.id.asc()).all()
     options = election.options()
 
-    out_dir = _export_dir()
-    out_path = out_dir / f"election_{election.id}_votes.csv"
+    # --- sanitize helper: remove internal CR/LF and trim ---
+    def safe_cell(val):
+        if val is None:
+            return ""
+        if isinstance(val, str):
+            # collapse any CR/LF inside labels into a single space
+            return " ".join(val.replace("\r", "").splitlines()).strip()
+        return val
 
-    with open(out_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
+    # write to the exports folder next to the DB
+    export_dir: Path = _export_dir()
+    tmp_path: Path = export_dir / f"election_{election.id}_votes.csv"
+
+    with open(tmp_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, lineterminator="\n", quoting=csv.QUOTE_MINIMAL)
+
         if len(options) == 1:
             writer.writerow(["election_id", "vote_date", "type", "question", "vote", "prev_hash", "vote_hash"])
             for v in votes:
                 payload = json.loads(v.vote_json)
-                writer.writerow([election.id, v.vote_date.isoformat(), payload["type"],
-                                 payload.get("option",""), payload["vote"], v.prev_hash or "", v.vote_hash])
+                row = [
+                    election.id,
+                    v.vote_date.isoformat(),
+                    safe_cell(payload.get("type")),
+                    safe_cell(payload.get("option", "")),
+                    safe_cell(payload.get("vote", "")),
+                    safe_cell(v.prev_hash or ""),
+                    safe_cell(v.vote_hash),
+                ]
+                writer.writerow(row)
         else:
             header = ["election_id", "vote_date", "type"] + [f"rank_{i+1}" for i in range(len(options))] + ["prev_hash","vote_hash"]
             writer.writerow(header)
             for v in votes:
                 payload = json.loads(v.vote_json)
-                ranking = payload.get("ranking", [])
-                row = [election.id, v.vote_date.isoformat(), payload["type"]] + ranking + [""] * (len(options)-len(ranking)) + [v.prev_hash or "", v.vote_hash]
+                ranking = [safe_cell(x) for x in payload.get("ranking", [])]
+                # pad to fixed width
+                ranking += [""] * (len(options) - len(ranking))
+                row = [
+                    election.id,
+                    v.vote_date.isoformat(),
+                    safe_cell(payload.get("type")),
+                    *ranking,
+                    safe_cell(v.prev_hash or ""),
+                    safe_cell(v.vote_hash),
+                ]
                 writer.writerow(row)
 
-    return send_file(out_path, as_attachment=True, download_name=out_path.name)
+    return send_file(str(tmp_path), as_attachment=True,
+                     download_name=f"election_{election.id}_votes.csv")
