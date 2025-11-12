@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% from "partials/_election_card.html" import election_card %}
+{% block content %}
+
+  {% call election_card(election, is_admin, default_image, variant='detail') %}
+
+  {% if is_admin and eligibility_debug %}
+    <div class="flash info" style="margin:8px 0">
+      <code style="background:#fff;padding:4px 6px;border:1px solid #ddd;border-radius:6px;display:block">
+        base_set={{ eligibility_debug.base_set }},
+        api_key_set={{ eligibility_debug.api_key_set }},
+        added_str="{{ eligibility_debug.added_str }}",
+        parsed={{ eligibility_debug.added_date }},
+        cutoff={{ election.eligibility_cutoff }},
+        ok={{ eligibility_debug.ok }},
+        reason={{ eligibility_debug.reason }}
+      </code>
+    </div>
+  {% endif %}
+
+    <h1 class="election-title">{{ election.title }}</h1>
+
+    <div class="muted md">{{ election.description|md }}</div>
+
+    <div class="election-meta">
+      <span class="tag">
+        {{ utc_to_local_human(election.start_at) }} → {{ utc_to_local_human(election.end_at) }}
+      </span>
+
+      {# Show eligibility requirement when present #}
+      {% if election.eligibility_cutoff %}
+        <span class="tag">
+          Gjaldgengi: aðild á eða fyrir {{ election.eligibility_cutoff.isoformat() }}
+        </span>
+      {% endif %}
+
+      {% if election.is_open() %}
+        <span class="tag open">Kosningu lýkur: {{ utc_to_local_human(election.end_at) }}</span>
+      {% elif election.is_upcoming() %}
+        <span class="tag">Kosning hefst: {{ utc_to_local_human(election.start_at) }}</span>
+      {% else %}
+        <span class="tag closed">Kosningu lokið</span>
+        <a class="btn secondary" href="{{ url_for('voting.export_votes', election_id=election.id) }}">Export CSV</a>
+      {% endif %}
+    </div>
+
+    {% if election.is_open() %}
+      {% set options = (shuffled_options if shuffled_options is defined else election.options()) %}
+
+      {# Already voted — show receipt if available #}
+      {% if already %}
+        <p class="muted">Þú hefur þegar greitt atkvæði í þessari kosningu.</p>
+
+        {% if receipt_hash %}
+          <div class="brand-card" style="margin-top:12px">
+            <h3 style="margin:0 0 6px;">Kvittun fyrir atkvæði</h3>
+            <p style="margin:0 0 8px;">
+              Geymdu þennan kóða. Hann staðfestir að þú hafir skráð atkvæði
+              í þessari kosningu, án tengingar við innihald atkvæðisins.
+            </p>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <code class="receipt" style="font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.95rem;
+                                           background:#fff; color:#000; padding:6px 8px; border:1px solid var(--color-gray-2);
+                                           border-radius:6px; user-select:all;">
+                {{ receipt_hash }}
+              </code>
+              <button class="btn tiny secondary"
+                      type="button"
+                      onclick="navigator.clipboard.writeText('{{ receipt_hash }}'); this.textContent='Afritað';">
+                Afrita
+              </button>
+            </div>
+          </div>
+        {% endif %}
+
+      {% else %}
+
+        {# Not yet voted #}
+        {% if election.eligibility_cutoff and (eligible_flag is defined) and (not eligible_flag) %}
+          <div class="flash error" role="alert" style="margin-bottom:12px;">
+            Þú ert ekki gjaldgeng/ur í þessari kosningu. Aðild þín er of ný miðað við skilyrði kosningar
+            (krafist er aðildar á eða fyrir {{ election.eligibility_cutoff.isoformat() }}).
+          </div>
+        {% else %}
+          <h2>Greiddu atkvæði</h2>
+
+          <form method="post" action="{{ url_for('voting.cast_vote', election_id=election.id) }}" class="form-grid">
+            {% if options|length == 1 %}
+              <div class="form-field" style="grid-column: 1 / -1;">
+                <label for="yesno">Spurning</label>
+                <p><strong>{{ options[0] }}</strong></p>
+                <div class="button-row" role="group" aria-label="Já / Nei">
+                  <label><input type="radio" name="yesno" value="YES"> Já</label>
+                  <label style="margin-left:16px"><input type="radio" name="yesno" value="NO"> Nei</label>
+                </div>
+              </div>
+            {% else %}
+              <div class="form-field" style="grid-column: 1 / -1;">
+                <p class="muted">
+                  Dragðu yfir eða ýttu á „Velja“ til að bæta í röðun. Fyrsta val er efst.
+                </p>
+              </div>
+
+              <div id="ranked-root"
+                   data-options='{{ options | tojson }}'
+                   style="grid-column: 1 / -1;">
+                <div class="rank-grid">
+                  <div class="rank-col">
+                    <h3 class="rank-heading">Kostir</h3>
+                    <ul id="rank-available" class="rank-list" aria-label="Kostir">
+                      {# JS will populate from data-options #}
+                    </ul>
+                  </div>
+
+                  <div class="rank-col rank-col--picked">
+                    <h3 class="rank-heading">Röðun þín</h3>
+                    <ol id="rank-picked" class="rank-list" aria-label="Röðun þín">
+                      {# Start empty; items added by click/drag always append to end #}
+                    </ol>
+                  </div>
+                </div>
+
+                <!-- Hidden inputs get injected on submit as rank_1, rank_2, ... -->
+                <div id="rank-hidden"></div>
+
+                <p class="help" style="margin-top:8px">
+                  Vísbending: Dragðu valkosti yfir í „Röðun þín“ eða notaðu hnappinn „Velja“.
+                  Í „Röðun þín“ er hægt að raða með því að draga eða nota ↑/↓.
+                </p>
+              </div>
+            {% endif %}
+
+            <div class="button-row" style="grid-column: 1 / -1; margin-top:6px;">
+              <button class="btn" type="submit">Senda atkvæði</button>
+              <a class="btn secondary" href="{{ url_for('voting.election_detail', election_id=election.id) }}">Hætta við</a>
+            </div>
+          </form>
+
+          {% if options|length > 1 %}
+            <script src="{{ url_for('static', filename='js/ranked_dnd.js') }}" defer></script>
+          {% endif %}
+        {% endif %}
+
+      {% endif %}
+
+    {% else %}
+      {% if election.is_upcoming() %}
+        <p class="muted">Kosning er ekki hafin.</p>
+      {% else %}
+        <span class="tag closed">Kosningu lokið</span>
+
+        <!-- Election stats -->
+        <div class="brand-card" style="margin-top:12px">
+          <h3 style="margin:0 0 6px;">Yfirlit atkvæða</h3>
+          <div class="row" style="gap:16px; flex-wrap:wrap;">
+            <div>
+              <div style="font-size:.9rem;">Fjöldi skráðra atkvæða</div>
+              <div style="font-weight:700; font-size:1.1rem;">{{ registry_count }}</div>
+            </div>
+            <div>
+              <div style="font-size:.9rem;">Fjöldi atkvæðaseðla</div>
+              <div style="font-weight:700; font-size:1.1rem;">{{ votes_count }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User receipt -->
+        {% if receipt_hash %}
+          <div class="brand-card" style="margin-top:12px">
+            <h3 style="margin:0 0 6px;">Kvittun fyrir atkvæði</h3>
+            <p style="margin:0 0 8px;">
+              Geymdu þennan kóða. Hann staðfestir að þú hafir skráð atkvæði
+              í þessari kosningu, án tengingar við innihald atkvæðisins.
+            </p>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <code class="receipt" style="font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.95rem;
+                                           background:#fff; color:#000; padding:6px 8px; border:1px solid var(--color-gray-2);
+                                           border-radius:6px; user-select:all;">
+                {{ receipt_hash }}
+              </code>
+              <button class="btn tiny secondary"
+                      type="button"
+                      onclick="navigator.clipboard.writeText('{{ receipt_hash }}'); this.textContent='Afritað';">
+                Afrita
+              </button>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+  {% endcall %}
+
+{% endblock %}

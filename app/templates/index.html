@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "partials/_election_card.html" import election_card %}
+
+{% block bands %}
+  {# Hero stripe #}
+  <section class="band band--lavender">
+    <div class="container">
+      <h1 style="margin:0">Kosningar</h1>
+      <p class="muted" style="margin-top:6px">Skoðaðu opnar og væntanlegar kosningar.</p>
+    </div>
+  </section>
+
+  {# Content panel with cards #}
+  <section class="band band--panel">
+    <div class="container">
+      <div class="grid grid--list">
+        {% for e in elections %}
+          {{ election_card(e, is_admin, default_image, 'detail') }}
+        {% endfor %}
+      </div>
+
+      {% if not elections %}
+        <p class="muted">Engar kosningar í gangi.</p>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

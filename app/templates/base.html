@@ -1,0 +1,70 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ title or 'Elections' }}</title>
+  <link rel="stylesheet" href="{{ staticv('css/piratar.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+  <meta name="theme-color" content="#1F0831">
+
+</head>
+<body>
+  <header class="header">
+    <nav class="nav container">
+      <a href="{{ url_for('main.index') }}" class="brand" aria-label="Heim">
+      <img class="brand-mark"
+        src="{{ url_for('static', filename='design/BW-Merki-Piratar/White-Circle-logo.png') }}"
+        alt="Píratar" />
+        <span class="brand-text">PÍRATAR</span>
+      </a>
+
+      <div class="nav-right">
+        {% if session.get('nafn') %}
+          <span class="tag">Innskráður: {{ session.get('nafn') }}</span>
+          {% if is_admin %}
+            <a class="nav-link" href="{{ url_for('admin.home') }}">Stjórnborð</a>
+          {% endif %}
+          <a href="{{ url_for('main.logout') }}" class="btn">Skrá út</a>
+        {% else %}
+          <a href="{{ url_for('main.login') }}" class="btn">Skrá inn</a>
+        {% endif %}
+	<a class="btn attention" href="https://piratar.is/vertu-memm">Vertu memm</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    {% block bands %}
+    <section class="band band--panel">
+      <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-wrap">
+              {% for cat,msg in messages %}
+                <div class="flash {{cat}}">{{ msg }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </div>
+    </section>
+    {% endblock %}
+  </main>
+
+
+  <footer class="site-footer">
+    <div class="container">
+      <strong>PÍRATAR</strong> ·
+      <a href="mailto:piratar@piratar.is">piratar@piratar.is</a>
+    </div>
+  </footer>
+</body>
+
+</html>

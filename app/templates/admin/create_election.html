@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block bands %}
+<section class="band band--yellow">
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for cat,msg in messages %}
+            <div class="flash {{cat}}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="brand-card">
+      <h1 style="margin-top:0">Búa til kosningu</h1>
+
+      <form method="post" id="election-form" class="form-grid form--brand" novalidate>
+        <div class="form-field">
+          <label for="title">Nafn kosninga</label>
+          <input id="title" name="title" class="input" required placeholder="Nafn kosninga - skilyrði">
+        </div>
+
+        <div class="form-field">
+          <label for="image_url">Image URL (optional)</label>
+          <input id="image_url" name="image_url" class="input" placeholder="https://…">
+        </div>
+
+        <div class="form-field" style="grid-column: 1 / -1;">
+          <label for="description">Lýsing</label>
+          <textarea id="description" name="description" class="textarea" rows="4"
+                    aria-describedby="desc-hint"
+                    placeholder="Stutt lýsing (styður markdown)"></textarea>
+          <div id="desc-hint" class="help">Styður markdown (bold, lists, links, code).</div>
+        </div>
+
+        <div class="form-field">
+          <label for="start_at">Kosning hefst</label>
+          <input id="start_at" name="start_at" type="text" class="input" required
+                 aria-describedby="tz-hint" placeholder="2025-11-02 22:00">
+        </div>
+
+        <div class="form-field">
+          <label for="end_at">Kosningu lýkur</label>
+          <input id="end_at" name="end_at" type="text" class="input" required
+                 aria-describedby="tz-hint" placeholder="2025-11-03 22:00">
+        </div>
+
+        <div class="form-field" style="grid-column: 1 / -1;">
+          <label for="options">Valmöguleikar (einn per línu)</label>
+          <textarea id="options" name="options" class="textarea" rows="6"
+                    placeholder="Valmöguleiki A&#10;Valmöguleiki B&#10;Valmöguleiki C" required></textarea>
+        </div>
+
+        <div class="form-field">
+          <label for="eligibility_cutoff">Gjaldgengi (aðild eldri en…)</label>
+          <input id="eligibility_cutoff" name="eligibility_cutoff" class="input"
+                type="date" placeholder="YYYY-MM-DD">
+          <div class="help">Aðeins þeir sem gengu í félagið á eða fyrir þennan dag mega kjósa. Skildu autt til að slökkva.</div>
+        </div>
+
+        <div id="tz-hint" class="help" style="grid-column: 1 / -1;">
+          Tímabelti: Atlantic/Reykjavík. Vistað sem UTC.
+        </div>
+
+        <div class="button-row" style="grid-column: 1 / -1; margin-top:6px;">
+          <button class="btn attention" type="submit">Create</button>
+          <a class="btn secondary" href="{{ url_for('admin.home') }}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- 24h picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+<script src="{{ staticv('js/election_form.js') }}" defer></script>
+{% endblock %}

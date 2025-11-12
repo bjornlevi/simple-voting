@@ -1,0 +1,49 @@
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<svg viewBox="0 0 640 480" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
+  <title id="t">Rafræn kosning — Sími (4:3, transparent)</title>
+  <desc id="d">Sími með kjörseðli og gulum „Kjósa“ hnappi, fínstillt minni haki.</desc>
+  <defs>
+    <style>
+      .bezel { fill:#0E1424; stroke:#445378; stroke-width:2; }
+      .mut   { fill:#39425A; }
+      .screen{ fill:#FFFFFF; }
+      .line  { stroke:#C7CCDB; stroke-width:5; stroke-linecap:round; }
+      .box   { fill:#FFFFFF; stroke:#7B68EE; stroke-width:4; rx:8; }  /* 20x20 */
+      .ok    { stroke:#17C964; stroke-width:5; stroke-linecap:round; stroke-linejoin:round; fill:none; }  /* smaller tick */
+      .cta   { fill:#FFE500; }
+      .ctaText { font: 700 18px "Public Sans", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; fill:#000; }
+    </style>
+  </defs>
+
+  <!-- Centered phone sized for a 4:3 media well -->
+  <g transform="translate(230,68) scale(1.15)">
+    <!-- phone body -->
+    <rect x="0" y="0" width="180" height="294" rx="26" class="bezel"></rect>
+    <rect x="44" y="16" width="92" height="8" rx="4" class="mut"></rect>
+    <rect x="12" y="52" width="156" height="188" rx="12" class="screen"></rect>
+
+    <!-- Row 1 (checked) -->
+    <rect x="26" y="70" width="20" height="20" class="box"></rect>
+    <!-- Smaller checkmark inside 20×20 box -->
+    <path d="M32,81 L36,86 L42,76" class="ok"></path>
+    <line x1="58" y1="80" x2="158" y2="80" class="line"></line>
+
+    <!-- Row 2 -->
+    <rect x="26" y="104" width="20" height="20" class="box"></rect>
+    <line x1="58" y1="114" x2="150" y2="114" class="line"></line>
+
+    <!-- Row 3 -->
+    <rect x="26" y="138" width="20" height="20" class="box"></rect>
+    <line x1="58" y1="148" x2="162" y2="148" class="line"></line>
+
+    <!-- Row 4 -->
+    <rect x="26" y="172" width="20" height="20" class="box"></rect>
+    <line x1="58" y1="182" x2="142" y2="182" class="line"></line>
+
+    <!-- CTA -->
+    <g transform="translate(26,220)">
+      <rect width="128" height="26" rx="8" class="cta"></rect>
+      <text x="64" y="18" text-anchor="middle" class="ctaText">Kjósa</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="is">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Villa 500 – Eitthvað fór úrskeiðis</title>
+  <style>
+    :root {
+      --bg: #0f172a; /* slate-900 */
+      --card: #111827; /* gray-900 */
+      --text: #e5e7eb; /* gray-200 */
+      --muted: #9ca3af; /* gray-400 */
+      --accent: #22d3ee; /* cyan-400 */
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 600px at 20% 0%, #0b1220, var(--bg));
+      color: var(--text);
+      font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+    }
+    .card {
+      width: min(720px, 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      backdrop-filter: blur(6px);
+      padding: 2rem;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.45);
+    }
+    h1 {
+      font-size: clamp(1.75rem, 2.5vw + 1rem, 2.5rem);
+      margin: 0 0 0.5rem;
+    }
+    p { margin: 0.5rem 0; color: var(--muted); }
+    .actions { margin-top: 1.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    a.button {
+      display: inline-block;
+      padding: 0.65rem 1rem;
+      border-radius: 10px;
+      text-decoration: none;
+      color: #0b1220;
+      background: var(--accent);
+      font-weight: 600;
+    }
+    .muted-link {
+      color: var(--muted);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    footer { margin-top: 1rem; font-size: 0.9rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="title">
+    <h1 id="title">Villa 500 – Eitthvað fór úrskeiðis</h1>
+    <p>Þjónninn rakst á innri villu og gat ekki afgreitt beiðnina þína.</p>
+    <p>Reyndu aftur síðar. Ef vandamálið heldur áfram máttu <a class="muted-link" href="mailto:webmaster@piratar.is">hafa samband</a>.</p>
+
+    <div class="actions">
+      <a class="button" href="/">Fara á forsíðu</a>
+      <a class="muted-link" href="#" onclick="location.reload(); return false;">Endurhlaða síðu</a>
+    </div>
+
+    <footer>
+      <div>Beiðni: <span class="mono" id="rid">—</span></div>
+      <div>Tími: <span class="mono" id="ts">—</span> (Atlantic/Reykjavik)</div>
+    </footer>
+  </main>
+
+  <script>
+    // Optional niceties: show a lightweight pseudo request id and timestamp.
+    (function () {
+      const now = new Date();
+      const ts = now.toLocaleString('is-IS', { timeZone: 'Atlantic/Reykjavik' });
+      document.getElementById('ts').textContent = ts;
+      // Pseudo ID: yyyymmddhhmmss + 4 random hex
+      const pad = n => String(n).padStart(2, '0');
+      const id = [
+        now.getFullYear(),
+        pad(now.getMonth()+1),
+        pad(now.getDate()),
+        pad(now.getHours()),
+        pad(now.getMinutes()),
+        pad(now.getSeconds())
+      ].join('') + '-' + Math.random().toString(16).slice(2,6);
+      document.getElementById('rid').textContent = id;
+    })();
+  </script>
+</body>
+</html>
